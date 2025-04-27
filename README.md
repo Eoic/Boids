@@ -1,2 +1,6 @@
 # Boids
-A primitive boids ("bird-oid object") algorithm implementation.
+Boids ("bird-oid objects") algorithm implementation.
+
+## Development
+* `pip install -e '.[dev]'`
+

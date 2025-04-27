@@ -1,0 +1,44 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "boids"
+version = "0.0.1"
+authors = [
+  { name="Karolis Strazdas", email="karolis.strazdas@protonmail.com" },
+]
+description = "Boids simulation."
+readme = "README.md"
+requires-python = ">=3.8"
+dependencies = [
+  "pygame"
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+[tool.ruff]
+line-length = 120
+select = ["E", "W", "F", "I", "UP", "B", "C90", "C4", "SIM", "PL", "RUF", "PERF", "S"]
+ignore = [
+    "B905",
+]
+fixable = ["ALL"]
+
+[project.optional-dependencies]
+dev = [
+  "pytest",
+  "debugpy",
+  "build",
+  "ruff"
+]
+
+[project.urls]
+Homepage = "https://github.com/Eoic/Boids"
+Issues = "https://github.com/Eoic/Boids/issues"
+
+[project.scripts]
+boids = "boids.boids:main"
