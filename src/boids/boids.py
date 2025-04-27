@@ -62,12 +62,15 @@ def rule_three(target_boid: Boid, boids: list[Boid]):
     center = center / (len(boids) - 1)
     return (target_boid.velocity - center) / 8
 
-def constrain_position(boid: Boid, margin: int = 10, turn_factor: float = 1):
+def apply_wind(_boid: Boid):
+        return pygame.Vector2(0.75 + random.random() - 0.5, 0.5 + random.random() - 0.5)
+
+def constrain_position(boid: Boid, margin: int = 10, turn_factor: float = 100):
     velocity = pygame.Vector2(0, 0)
 
     if boid.position.x < margin:
         velocity.x = turn_factor
-    elif boid.position.x > SCREEN_HEIGHT - margin:
+    elif boid.position.x > SCREEN_WIDTH - margin:
         velocity.x = -turn_factor
 
     if boid.position.y < margin:
@@ -103,8 +106,9 @@ def update_boids(boids: list[Boid], delta_time: float, speed: float):
         v1 = rule_one(boid, boids)
         v2 = rule_two(boid, boids)
         v3 = rule_three(boid, boids)
-        v4 = constrain_position(boid)
-        boid.velocity += v1 + v2 + v3 + v4
+        v4 = apply_wind(boid)
+        vn = constrain_position(boid)
+        boid.velocity += v1 + v2 + v3 + v4 + vn
         boid.velocity = limit_velocity(boid)
         boid.position += (boid.velocity * speed * delta_time)
 
@@ -117,10 +121,10 @@ def render(boids: list[Boid], screen: pygame.Surface, clock: pygame.time.Clock):
             if event.type == pygame.QUIT:
                 is_running = False
 
-        screen.fill(color="gray")
+        screen.fill(color="#2f2f2f")
 
         for boid in boids:
-            pygame.draw.circle(screen, "red", boid.position, 10)
+            pygame.draw.circle(screen, "crimson", boid.position, 10)
 
         update_boids(boids, 5, delta_time)
         pygame.display.flip()
