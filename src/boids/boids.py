@@ -4,8 +4,8 @@ from dataclasses import dataclass, field
 import pygame
 
 FPS = 60
-SCREEN_WIDTH = 1280
-SCREEN_HEIGHT = 720
+SCREEN_WIDTH = 1920
+SCREEN_HEIGHT = 1080
 
 @dataclass
 class Boid:
@@ -18,7 +18,7 @@ def rule_one(target_boid: Boid, boids: list[Boid]):
     of the flock. The center is the average position of all the boids,
     not including itself.
     """
-    center: pygame.Vector2 = pygame.Vector2(0, 0)
+    center = pygame.Vector2(0, 0)
 
     for boid in boids:
         if boid == target_boid:
@@ -35,7 +35,7 @@ def rule_two(target_boid: Boid, boids: list[Boid], threshold: int = 100):
     each boid is withing a threshold distance, and if it is, moving it
     away by the distance between the current boid and the other.
     """
-    center: pygame.Vector2 = pygame.Vector2(0, 0)
+    center = pygame.Vector2(0, 0)
 
     for boid in boids:
         if boid == target_boid:
@@ -51,7 +51,7 @@ def rule_three(target_boid: Boid, boids: list[Boid]):
     Find the average velocity of all the other boids
     and add 1/8th of if to the boid's current velocity.
     """
-    center: pygame.Vector2 = pygame.Vector2(0, 0)
+    center = pygame.Vector2(0, 0)
 
     for boid in boids:
         if boid == target_boid:
@@ -61,6 +61,27 @@ def rule_three(target_boid: Boid, boids: list[Boid]):
 
     center = center / (len(boids) - 1)
     return (target_boid.velocity - center) / 8
+
+def constrain_position(boid: Boid, margin: int = 10, turn_factor: float = 1):
+    velocity = pygame.Vector2(0, 0)
+
+    if boid.position.x < margin:
+        velocity.x = turn_factor
+    elif boid.position.x > SCREEN_HEIGHT - margin:
+        velocity.x = -turn_factor
+
+    if boid.position.y < margin:
+        velocity.y = turn_factor
+    elif boid.position.y > SCREEN_HEIGHT - margin:
+        velocity.y = -turn_factor
+
+    return velocity
+
+def limit_velocity(boid: Boid, max_speed: float = 50):
+    if boid.velocity.length() > max_speed:
+        return boid.velocity.normalize() * max_speed
+
+    return boid.velocity
 
 def setup_boids(count: int) -> list[Boid]:
     boids: list[Boid] = []
@@ -77,13 +98,15 @@ def setup_boids(count: int) -> list[Boid]:
 
     return boids
 
-def update_boids(boids: list[Boid]):
+def update_boids(boids: list[Boid], delta_time: float, speed: float):
     for boid in boids:
         v1 = rule_one(boid, boids)
         v2 = rule_two(boid, boids)
         v3 = rule_three(boid, boids)
-        boid.velocity = boid.velocity + v1 + v2 + v3
-        boid.position = boid.position + boid.velocity
+        v4 = constrain_position(boid)
+        boid.velocity += v1 + v2 + v3 + v4
+        boid.velocity = limit_velocity(boid)
+        boid.position += (boid.velocity * speed * delta_time)
 
 def render(boids: list[Boid], screen: pygame.Surface, clock: pygame.time.Clock):
     is_running = True
@@ -99,7 +122,7 @@ def render(boids: list[Boid], screen: pygame.Surface, clock: pygame.time.Clock):
         for boid in boids:
             pygame.draw.circle(screen, "red", boid.position, 10)
 
-        update_boids(boids)
+        update_boids(boids, 5, delta_time)
         pygame.display.flip()
         delta_time = clock.tick(FPS) / 1000
 
@@ -107,7 +130,7 @@ def main():
     pygame.init()
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
     clock = pygame.time.Clock()
-    boids = setup_boids(1000)
+    boids = setup_boids(25)
     render(boids, screen, clock)
     pygame.quit()
 
