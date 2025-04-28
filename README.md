@@ -43,7 +43,7 @@ It's highly recommended to install and run this project within a virtual environ
         pip install -e '.[dev]'
         ```
         * The `-e` flag installs the project in "editable" mode. Changes you make to the source code will be immediately effective without needing to reinstall.
-        * `.[dev]` installs the main package dependencies and the extra dependencies specified under the `[dev]` section in `pyproject.toml`. These usually include tools for testing, linting, formatting, etc.
+        * `.[dev]` installs the main package dependencies and the extra dependencies specified under the `[dev]` section in `pyproject.toml`. These include tools for testing, linting, formatting, etc.
 
 ## Usage
 
