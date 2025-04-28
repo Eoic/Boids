@@ -1,16 +1,69 @@
+import math
+import os
 import random
+import sys
 from dataclasses import dataclass, field
 
+import imgui
+import OpenGL.GL as gl
 import pygame
+from imgui.integrations.pygame import PygameRenderer
 
 FPS = 60
 SCREEN_WIDTH = 1920
 SCREEN_HEIGHT = 1080
+SIZE = (SCREEN_WIDTH, SCREEN_HEIGHT)
+
+os.environ["SDL_VIDEO_X11_FORCE_EGL"] = "1"
+
+def draw_circle(center: pygame.Vector2, radius: float, color: tuple[float, float, float, float], segments: int = 32):
+    gl.glColor4f(*color)
+    gl.glBegin(gl.GL_TRIANGLE_FAN)
+    gl.glVertex2f(center.x, center.y)
+
+    for i in range(segments + 1):
+        angle = 2 * math.pi * i / segments
+        x = center.x + math.cos(angle) * radius
+        y = center.y + math.sin(angle) * radius
+        gl.glVertex2f(x, y)
+
+    gl.glEnd()
+
+def set_orthographic_projection(width: int, height: int):
+    gl.glMatrixMode(gl.GL_PROJECTION)
+    gl.glLoadIdentity()
+    gl.glOrtho(0, width, height, 0, -1, 1)
+    gl.glMatrixMode(gl.GL_MODELVIEW)
+    gl.glLoadIdentity()
+
+def draw_filled_rect(x: float, y: float, width: float, height: float, color: tuple[float, float, float]):
+    gl.glColor3f(*color)
+    gl.glBegin(gl.GL_QUADS)
+    gl.glVertex2f(x, y)
+    gl.glVertex2f(x + width, y)
+    gl.glVertex2f(x + width, y + height)
+    gl.glVertex2f(x, y + height)
+    gl.glEnd()
+
+def draw_rect_outline(top_left: pygame.Vector2, bottom_right: pygame.Vector2, color: tuple[float, float, float], line_width: float = 1.0):
+    gl.glLineWidth(line_width)
+    gl.glColor3f(*color)
+    gl.glBegin(gl.GL_LINE_LOOP)
+    gl.glVertex2f(*top_left.xy)
+    gl.glVertex2f(bottom_right.x, top_left.y)
+    gl.glVertex2f(*bottom_right.xy)
+    gl.glVertex2f(top_left.x, bottom_right.y)
+    gl.glEnd()
 
 @dataclass
 class Boid:
     velocity: pygame.math.Vector2 = field(default_factory=lambda: pygame.Vector2(0, 0))
     position: pygame.math.Vector2 = field(default_factory=lambda: pygame.Vector2(0, 0))
+
+@dataclass
+class Settings:
+    cage_top_left: pygame.Vector2 = field(default_factory=lambda: pygame.Vector2(0, 0))
+    cage_bottom_right: pygame.Vector2 = field(default_factory=lambda: pygame.Vector2(SCREEN_WIDTH, SCREEN_HEIGHT))
 
 def rule_one(target_boid: Boid, boids: list[Boid]):
     """
@@ -63,19 +116,23 @@ def rule_three(target_boid: Boid, boids: list[Boid]):
     return (target_boid.velocity - center) / 8
 
 def apply_wind(_boid: Boid):
-        return pygame.Vector2(0.75 + random.random() - 0.5, 0.5 + random.random() - 0.5)
+        return pygame.Vector2(0, 0)
 
-def constrain_position(boid: Boid, margin: int = 10, turn_factor: float = 100):
+def constrain_position(boid: Boid, settings: Settings, margin: int = 10, turn_factor: float = 100):
     velocity = pygame.Vector2(0, 0)
+    margin_top = settings.cage_top_left.y
+    margin_left = settings.cage_top_left.x
+    margin_bottom = SCREEN_HEIGHT - settings.cage_bottom_right.y
+    margin_right = SCREEN_WIDTH - settings.cage_bottom_right.x
 
-    if boid.position.x < margin:
+    if boid.position.x < margin_left:
         velocity.x = turn_factor
-    elif boid.position.x > SCREEN_WIDTH - margin:
+    elif boid.position.x > SCREEN_WIDTH - margin_right:
         velocity.x = -turn_factor
 
-    if boid.position.y < margin:
+    if boid.position.y < margin_top:
         velocity.y = turn_factor
-    elif boid.position.y > SCREEN_HEIGHT - margin:
+    elif boid.position.y > SCREEN_HEIGHT - margin_bottom:
         velocity.y = -turn_factor
 
     return velocity
@@ -101,18 +158,43 @@ def setup_boids(count: int) -> list[Boid]:
 
     return boids
 
-def update_boids(boids: list[Boid], delta_time: float, speed: float):
+def update_boids(boids: list[Boid], delta_time: float, speed: float, settings: Settings):
     for boid in boids:
         v1 = rule_one(boid, boids)
         v2 = rule_two(boid, boids)
         v3 = rule_three(boid, boids)
         v4 = apply_wind(boid)
-        vn = constrain_position(boid)
+        vn = constrain_position(boid, settings)
         boid.velocity += v1 + v2 + v3 + v4 + vn
         boid.velocity = limit_velocity(boid)
         boid.position += (boid.velocity * speed * delta_time)
 
-def render(boids: list[Boid], screen: pygame.Surface, clock: pygame.time.Clock):
+def render_gui(settings: Settings) -> Settings:
+    if imgui.begin_main_menu_bar():
+        if imgui.begin_menu("File", True):
+            clicked_quit, selected_quit = imgui.menu_item("Quit", "Cmd+Q", False, True)
+
+            if clicked_quit:
+                sys.exit(0)
+
+            imgui.end_menu()
+
+        imgui.end_main_menu_bar()
+
+    imgui.set_next_window_position(25, 45)
+    imgui.set_next_window_size(0, 0)
+    imgui.begin("Settings", flags=imgui.WINDOW_ALWAYS_AUTO_RESIZE)
+    changed, settings.cage_top_left.x = imgui.slider_float("X0", settings.cage_top_left.x, 0.0, SCREEN_WIDTH / 2)
+    changed, settings.cage_top_left.y = imgui.slider_float("Y0", settings.cage_top_left.y, 0.0, SCREEN_HEIGHT/ 2)
+    changed, settings.cage_bottom_right.x = imgui.slider_float("X1", settings.cage_bottom_right.x, SCREEN_WIDTH / 2, SCREEN_WIDTH)
+    changed, settings.cage_bottom_right.y = imgui.slider_float("Y1", settings.cage_bottom_right.y, SCREEN_HEIGHT / 2, SCREEN_HEIGHT)
+    clicked_reset = imgui.button("Reset Settings")
+    imgui.end()
+
+    return settings
+
+def render(boids: list[Boid], screen: pygame.Surface, impl: PygameRenderer, clock: pygame.time.Clock):
+    settings = Settings()
     is_running = True
     delta_time = 0
 
@@ -121,20 +203,40 @@ def render(boids: list[Boid], screen: pygame.Surface, clock: pygame.time.Clock):
             if event.type == pygame.QUIT:
                 is_running = False
 
-        screen.fill(color="#2f2f2f")
+            impl.process_event(event)
+
+        impl.process_inputs()
+        imgui.new_frame()
+
+        settings = render_gui(settings)
+        update_boids(boids, 5, delta_time, settings)
+
+        gl.glClearColor(0.08, 0.1, 0.12, 1)
+        gl.glClear(gl.GL_COLOR_BUFFER_BIT)
+        set_orthographic_projection(SCREEN_WIDTH, SCREEN_HEIGHT)
 
         for boid in boids:
-            pygame.draw.circle(screen, "crimson", boid.position, 10)
+            draw_circle(boid.position, 10, (0.86, 0.08, 0.24, 1.0))
 
-        update_boids(boids, 5, delta_time)
+        draw_rect_outline(settings.cage_top_left, settings.cage_bottom_right, (0.53, 0.01, 0.2), line_width=3.0)
+
+        imgui.render()
+        impl.render(imgui.get_draw_data())
+
         pygame.display.flip()
         delta_time = clock.tick(FPS) / 1000
 
 def main():
     pygame.init()
-    screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+    screen = pygame.display.set_mode(SIZE, pygame.DOUBLEBUF | pygame.OPENGL)
+    imgui.create_context()
+    impl = PygameRenderer()
+    gl.glEnable(gl.GL_BLEND)
+    gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
+    io = imgui.get_io()
+    io.display_size = SIZE
     clock = pygame.time.Clock()
     boids = setup_boids(25)
-    render(boids, screen, clock)
+    render(boids, screen, impl, clock)
     pygame.quit()
 

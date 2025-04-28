@@ -12,7 +12,8 @@ description = "Boids simulation."
 readme = "README.md"
 requires-python = ">=3.8"
 dependencies = [
-  "pygame"
+  "pygame",
+  "imgui[pygame]"
 ]
 classifiers = [
     "Programming Language :: Python :: 3",
