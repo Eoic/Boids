@@ -13,6 +13,7 @@ FPS = 60
 SCREEN_WIDTH = 1920
 SCREEN_HEIGHT = 1080
 SIZE = (SCREEN_WIDTH, SCREEN_HEIGHT)
+TOP_MENU_HEIGHT = 19
 
 os.environ["SDL_VIDEO_X11_FORCE_EGL"] = "1"
 
@@ -49,8 +50,8 @@ def draw_rect_outline(top_left: pygame.Vector2, bottom_right: pygame.Vector2, co
     gl.glLineWidth(line_width)
     gl.glColor3f(*color)
     gl.glBegin(gl.GL_LINE_LOOP)
-    gl.glVertex2f(*top_left.xy)
-    gl.glVertex2f(bottom_right.x, top_left.y)
+    gl.glVertex2f(top_left.x, top_left.y + TOP_MENU_HEIGHT)
+    gl.glVertex2f(bottom_right.x, top_left.y + TOP_MENU_HEIGHT)
     gl.glVertex2f(*bottom_right.xy)
     gl.glVertex2f(top_left.x, bottom_right.y)
     gl.glEnd()
@@ -181,7 +182,7 @@ def render_gui(settings: Settings) -> Settings:
 
         imgui.end_main_menu_bar()
 
-    imgui.set_next_window_position(25, 45)
+    imgui.set_next_window_position(10, 12 + TOP_MENU_HEIGHT)
     imgui.set_next_window_size(0, 0)
     imgui.begin("Settings", flags=imgui.WINDOW_ALWAYS_AUTO_RESIZE)
     changed, settings.cage_top_left.x = imgui.slider_float("X0", settings.cage_top_left.x, 0.0, SCREEN_WIDTH / 2)
@@ -189,6 +190,10 @@ def render_gui(settings: Settings) -> Settings:
     changed, settings.cage_bottom_right.x = imgui.slider_float("X1", settings.cage_bottom_right.x, SCREEN_WIDTH / 2, SCREEN_WIDTH)
     changed, settings.cage_bottom_right.y = imgui.slider_float("Y1", settings.cage_bottom_right.y, SCREEN_HEIGHT / 2, SCREEN_HEIGHT)
     clicked_reset = imgui.button("Reset Settings")
+
+    if clicked_reset:
+        settings = Settings()
+
     imgui.end()
 
     return settings
@@ -218,7 +223,7 @@ def render(boids: list[Boid], screen: pygame.Surface, impl: PygameRenderer, cloc
         for boid in boids:
             draw_circle(boid.position, 10, (0.86, 0.08, 0.24, 1.0))
 
-        draw_rect_outline(settings.cage_top_left, settings.cage_bottom_right, (0.53, 0.01, 0.2), line_width=3.0)
+        draw_rect_outline(settings.cage_top_left, settings.cage_bottom_right, (0.53, 0.01, 0.2), line_width=2.0)
 
         imgui.render()
         impl.render(imgui.get_draw_data())
