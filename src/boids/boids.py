@@ -100,7 +100,11 @@ def rule_one(target_boid: Boid, boids: list[Boid], settings: Settings):
 
         center = center + boid.position
 
-    center = center / (len(boids) - 1)
+    boid_count = len(boids) - 1
+
+    if boid_count > 0:
+        center = center / boid_count
+
     return (center - target_boid.position) * (settings.center_mass_strength / 100)
 
 def rule_two(target_boid: Boid, boids: list[Boid], settings: Settings):
@@ -133,7 +137,11 @@ def rule_three(target_boid: Boid, boids: list[Boid], settings: Settings):
 
         center = center + boid.velocity
 
-    center = center / (len(boids) - 1)
+    boid_count = len(boids) - 1
+
+    if boid_count > 0:
+        center = center / boid_count
+
     return (target_boid.velocity - center) * (settings.avg_velocity_strength / 100)
 
 def apply_wind(_boid: Boid, settings: Settings):
@@ -157,9 +165,6 @@ def constrain_position(boid: Boid, settings: Settings, turn_factor: float = 50):
         velocity.y = -turn_factor
 
     return velocity
-
-def pull_towards_goal(boid: Boid, goal: Vector2):
-    return (goal - boid.position) / 100
 
 def limit_velocity(boid: Boid, max_speed: float = 100):
     if boid.velocity.length() > max_speed:
@@ -213,6 +218,26 @@ def update_boids(state: State, settings: Settings, delta_time: float):
         boid.velocity = limit_velocity(boid)
         boid.position += (boid.velocity * settings.boid_speed * delta_time)
 
+def adjust_boid_count(state: State, settings: Settings):
+    diff = settings.boid_count - len(state.boids)
+
+    if diff < 0:
+        for _ in range(diff, 0, 1):
+            idx = random.randint(0, len(state.boids) - 1)
+            state.boids.remove(state.boids[idx])
+
+        return
+
+    for _ in range(diff):
+        boid = Boid()
+
+        boid.position.update(
+            random.randint(0, SCREEN_WIDTH),
+            random.randint(0, SCREEN_HEIGHT)
+        )
+
+        state.boids.append(boid)
+
 def render_settings(settings: Settings) -> Settings:
     if imgui.begin_main_menu_bar():
         if imgui.begin_menu("File", True):
@@ -241,7 +266,7 @@ def render_settings(settings: Settings) -> Settings:
 
     if imgui.tree_node("Boids", flags=tree_node_flags):
         imgui.separator()
-        _changed, settings.boid_count = imgui.slider_int("Boid count", settings.boid_count, 1, 1000)
+        _changed, settings.boid_count = imgui.slider_int("Boid count", settings.boid_count, 1, 300)
         _changed, settings.boid_speed = imgui.slider_float("Boid speed", settings.boid_speed, 0.1, 10.0)
         _changed, settings.center_mass_strength = imgui.slider_int("Center of mass strength, %", settings.center_mass_strength, 1, 100)
         _changed, settings.avg_velocity_strength = imgui.slider_int("Average velocity strength, %", settings.avg_velocity_strength, 1, 100)
@@ -289,6 +314,7 @@ def render(_screen: pygame.Surface, impl: PygameRenderer, clock: pygame.time.Clo
         imgui.new_frame()
 
         settings = render_settings(settings)
+        adjust_boid_count(state, settings)
         update_goal(state, settings)
         update_boids(state, settings, delta_time)
 
@@ -302,7 +328,7 @@ def render(_screen: pygame.Surface, impl: PygameRenderer, clock: pygame.time.Clo
         draw_rect_outline(settings.cage_top_left, settings.cage_bottom_right, (0.53, 0.01, 0.2), line_width=2.0)
 
         if state.goal_alive:
-            draw_filled_rect(state.goal_position.x, state.goal_position.y, 20, 20, (0.2, 0.8, 0.1))
+            draw_circle(state.goal_position, 10, (0.2, 0.8, 0.1, 1.0))
 
         imgui.render()
         impl.render(imgui.get_draw_data())
