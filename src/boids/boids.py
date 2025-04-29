@@ -83,7 +83,7 @@ def rule_one(target_boid: Boid, boids: list[Boid]):
     center = center / (len(boids) - 1)
     return (center - target_boid.position) / 100
 
-def rule_two(target_boid: Boid, boids: list[Boid], threshold: int = 100):
+def rule_two(target_boid: Boid, boids: list[Boid], threshold: int = 35):
     """
     Make sure boids do not collide with each other by checking whether
     each boid is withing a threshold distance, and if it is, moving it
@@ -138,7 +138,7 @@ def constrain_position(boid: Boid, settings: Settings, margin: int = 10, turn_fa
 
     return velocity
 
-def limit_velocity(boid: Boid, max_speed: float = 50):
+def limit_velocity(boid: Boid, max_speed: float = 100):
     if boid.velocity.length() > max_speed:
         return boid.velocity.normalize() * max_speed
 
@@ -185,6 +185,7 @@ def render_gui(settings: Settings) -> Settings:
     imgui.set_next_window_position(10, 12 + TOP_MENU_HEIGHT)
     imgui.set_next_window_size(0, 0)
     imgui.begin("Settings", flags=imgui.WINDOW_ALWAYS_AUTO_RESIZE)
+    imgui.text("Boundary")
     changed, settings.cage_top_left.x = imgui.slider_float("X0", settings.cage_top_left.x, 0.0, SCREEN_WIDTH / 2)
     changed, settings.cage_top_left.y = imgui.slider_float("Y0", settings.cage_top_left.y, 0.0, SCREEN_HEIGHT/ 2)
     changed, settings.cage_bottom_right.x = imgui.slider_float("X1", settings.cage_bottom_right.x, SCREEN_WIDTH / 2, SCREEN_WIDTH)
@@ -214,7 +215,7 @@ def render(boids: list[Boid], screen: pygame.Surface, impl: PygameRenderer, cloc
         imgui.new_frame()
 
         settings = render_gui(settings)
-        update_boids(boids, 5, delta_time, settings)
+        update_boids(boids, delta_time, 2.5, settings)
 
         gl.glClearColor(0.08, 0.1, 0.12, 1)
         gl.glClear(gl.GL_COLOR_BUFFER_BIT)
@@ -241,7 +242,7 @@ def main():
     io = imgui.get_io()
     io.display_size = SIZE
     clock = pygame.time.Clock()
-    boids = setup_boids(25)
+    boids = setup_boids(55)
     render(boids, screen, impl, clock)
     pygame.quit()
 
