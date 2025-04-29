@@ -77,7 +77,8 @@ class Settings:
     # Environment
     goal: bool = field(default=False)
     goal_strength: int = field(default=1)
-    goal_duration_sec: bool = field(default=15)
+    goal_duration_sec: bool = field(default=5)
+    wind_direction: Vector2 = field(default_factory=lambda: Vector2(0, 0))
     # Boids
     boid_count: int = field(default=50)
     boid_speed: float = field(default=2.5)
@@ -135,8 +136,8 @@ def rule_three(target_boid: Boid, boids: list[Boid], settings: Settings):
     center = center / (len(boids) - 1)
     return (target_boid.velocity - center) * (settings.avg_velocity_strength / 100)
 
-def apply_wind(_boid: Boid):
-        return Vector2(0, 0)
+def apply_wind(_boid: Boid, settings: Settings):
+    return settings.wind_direction
 
 def constrain_position(boid: Boid, settings: Settings, turn_factor: float = 50):
     velocity = Vector2(0, 0)
@@ -185,23 +186,30 @@ def update_goal(state: State, settings: Settings):
     if settings.goal:
         if not state.goal_alive:
             state.goal_position = Vector2(random.randint(0, SCREEN_WIDTH), random.randint(0, SCREEN_HEIGHT))
-
-        state.goal_next_rotation = pygame.time.get_ticks() + settings.goal_duration_sec * 1000
-        state.goal_alive = True
+            state.goal_next_rotation = pygame.time.get_ticks() + settings.goal_duration_sec * 1000
+            state.goal_alive = True
 
         if pygame.time.get_ticks() - state.goal_next_rotation >= 0:
             state.goal_position = Vector2(random.randint(0, SCREEN_WIDTH), random.randint(0, SCREEN_HEIGHT))
+            state.goal_next_rotation = pygame.time.get_ticks() + settings.goal_duration_sec * 1000
     elif state.goal_alive:
         state.goal_alive = False
 
-def update_boids(boids: list[Boid], settings: Settings, delta_time: float):
-    for boid in boids:
-        v1 = rule_one(boid, boids, settings)
-        v2 = rule_two(boid, boids, settings)
-        v3 = rule_three(boid, boids, settings)
-        v4 = apply_wind(boid)
+def apply_goal(boid: Boid, state: State, settings: Settings):
+    if not state.goal_alive:
+        return Vector2(0, 0)
+
+    return (state.goal_position - boid.position) * (settings.goal_strength / 100)
+
+def update_boids(state: State, settings: Settings, delta_time: float):
+    for boid in state.boids:
+        v1 = rule_one(boid, state.boids, settings)
+        v2 = rule_two(boid, state.boids, settings)
+        v3 = rule_three(boid, state.boids, settings)
+        v4 = apply_wind(boid, settings)
+        v5 = apply_goal(boid, state, settings)
         vn = constrain_position(boid, settings)
-        boid.velocity += v1 + v2 + v3 + v4 + vn
+        boid.velocity += v1 + v2 + v3 + v4 + v5 +vn
         boid.velocity = limit_velocity(boid)
         boid.position += (boid.velocity * settings.boid_speed * delta_time)
 
@@ -243,7 +251,10 @@ def render_settings(settings: Settings) -> Settings:
 
     if imgui.tree_node("Environment", flags=tree_node_flags):
         imgui.separator()
-        changed, settings.goal = imgui.checkbox("Random goal", settings.goal)
+        imgui.text("Wind")
+        _changed, settings.wind_direction.x = imgui.slider_float("X", settings.wind_direction.x, -5.0, 5.0)
+        _changed, settings.wind_direction.y = imgui.slider_float("Y", settings.wind_direction.y, -5.0, 5.0)
+        _changed, settings.goal = imgui.checkbox("Random goal", settings.goal)
 
         if settings.goal:
             _changed, settings.goal_duration_sec = imgui.slider_int("Goal duration, s.", settings.goal_duration_sec, 1, 30)
@@ -278,7 +289,8 @@ def render(_screen: pygame.Surface, impl: PygameRenderer, clock: pygame.time.Clo
         imgui.new_frame()
 
         settings = render_settings(settings)
-        update_boids(state.boids, settings, delta_time)
+        update_goal(state, settings)
+        update_boids(state, settings, delta_time)
 
         gl.glClearColor(0.08, 0.1, 0.12, 1)
         gl.glClear(gl.GL_COLOR_BUFFER_BIT)
@@ -288,6 +300,9 @@ def render(_screen: pygame.Surface, impl: PygameRenderer, clock: pygame.time.Clo
             draw_circle(boid.position, 5, (0.86, 0.08, 0.24, 1.0))
 
         draw_rect_outline(settings.cage_top_left, settings.cage_bottom_right, (0.53, 0.01, 0.2), line_width=2.0)
+
+        if state.goal_alive:
+            draw_filled_rect(state.goal_position.x, state.goal_position.y, 20, 20, (0.2, 0.8, 0.1))
 
         imgui.render()
         impl.render(imgui.get_draw_data())
