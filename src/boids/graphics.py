@@ -1,0 +1,57 @@
+import math
+
+import OpenGL.GL as gl
+from pygame import Vector2
+
+from boids.constants import TOP_MENU_HEIGHT
+
+
+def draw_circle(
+    center: Vector2,
+    radius: float,
+    color: tuple[float, float, float, float],
+    segments: int = 32
+):
+    gl.glColor4f(*color)
+    gl.glBegin(gl.GL_TRIANGLE_FAN)
+    gl.glVertex2f(center.x, center.y)
+
+    for i in range(segments + 1):
+        angle = 2 * math.pi * i / segments
+        x = center.x + math.cos(angle) * radius
+        y = center.y + math.sin(angle) * radius
+        gl.glVertex2f(x, y)
+
+    gl.glEnd()
+
+def set_orthographic_projection(screen_size: tuple[int, int]):
+    gl.glMatrixMode(gl.GL_PROJECTION)
+    gl.glLoadIdentity()
+    gl.glOrtho(0, screen_size[0], screen_size[1], 0, -1, 1)
+    gl.glMatrixMode(gl.GL_MODELVIEW)
+    gl.glLoadIdentity()
+
+def draw_filled_rect(x: float, y: float, width: float, height: float, color: tuple[float, float, float]):
+    gl.glColor3f(*color)
+    gl.glBegin(gl.GL_QUADS)
+    gl.glVertex2f(x, y)
+    gl.glVertex2f(x + width, y)
+    gl.glVertex2f(x + width, y + height)
+    gl.glVertex2f(x, y + height)
+    gl.glEnd()
+
+def draw_rect_outline(
+    top_left: Vector2,
+    bottom_right: Vector2,
+    color: tuple[float, float, float, float],
+    line_width: float = 1.0
+):
+    gl.glLineWidth(line_width)
+    gl.glColor4f(*color)
+    gl.glBegin(gl.GL_LINE_LOOP)
+    gl.glVertex2f(top_left.x, top_left.y + TOP_MENU_HEIGHT)
+    gl.glVertex2f(bottom_right.x, top_left.y + TOP_MENU_HEIGHT)
+    gl.glVertex2f(*bottom_right.xy)
+    gl.glVertex2f(top_left.x, bottom_right.y)
+    gl.glEnd()
+
