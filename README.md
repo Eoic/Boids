@@ -11,7 +11,7 @@ A Python implementation of the boids ("bird-oid objects") flocking algorithm, si
 
 * **Python:** 3.8+.
 * **pip:** The Python package installer.
-* [python3-devel](https://pkgs.org/download/python3-devel).
+* Corresponding [python3-devel](https://pkgs.org/download/python3-devel) package for your distribution.
 
 ## Installation
 
