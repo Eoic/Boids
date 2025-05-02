@@ -14,20 +14,45 @@ def test_insert():
     assert point == Vector2(1, -7)
     assert count == 2
 
-def test_delete():
+def test_iter_duplicate():
+    tree = KDTree[Vector2](2)
+    count = 5
+    tree_count = 0
+
+    for i in range(count):
+        tree.insert(Vector2(1, 5))
+
+    for item in tree:
+        tree_count += 1
+        assert item == Vector2(1, 5)
+
+    assert tree_count == count
+
+def test_len():
+    tree = KDTree[Vector2](2)
+
+    for _ in range(5):
+        tree.insert(Vector2(1, 2))
+
+    for _ in range(5):
+        tree.insert(Vector2(2, 1))
+
+    assert len(tree) == 10
+
+def test_remove():
     tree = KDTree[Vector2](2)
     tree.insert(Vector2(8, 2))
     tree.insert(Vector2(8, 2))
     tree.insert(Vector2(8, 2))
     assert tree.search(Vector2(8, 2))[1] == 3
 
-    tree.delete(Vector2(8, 2))
+    tree.remove(Vector2(8, 2))
     assert tree.search(Vector2(8, 2))[1] == 2
 
-    tree.delete(Vector2(8, 2))
+    tree.remove(Vector2(8, 2))
     assert tree.search(Vector2(8, 2))[1] == 1
 
-    tree.delete(Vector2(8, 2))
+    tree.remove(Vector2(8, 2))
     assert tree.search(Vector2(8, 2)) == None
 
 def test_range_search_unique():

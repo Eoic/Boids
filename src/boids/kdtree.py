@@ -19,11 +19,18 @@ class KDNode(Generic[T]):
 
 class KDTree(Generic[T]):
     def __init__(self, dimensions: int):
+        self.size: int = 0
+        self.is_dirty = False
         self.dimensions: int = dimensions
         self.root: KDNode[T] = None
 
     def insert(self, point: T):
+        self.is_dirty = True
         self.root = self._insert(point, self.root, 0)
+
+    def remove(self, point: T):
+        self.is_dirty = True
+        self.root = self._remove(self.root, point, depth=0)
 
     def search(self, point: T) -> tuple[T, int] | None:
         needle = self._search(point, self.root, 0)
@@ -32,9 +39,6 @@ class KDTree(Generic[T]):
             return None
 
         return (needle.data, needle.count)
-
-    def delete(self, point: T):
-        self.root = self._delete(self.root, point, depth=0)
 
     def search_radius(self, query: T, radius: float) -> list[tuple[T, int]]:
         results: list[tuple[T, int]] = []
@@ -58,6 +62,17 @@ class KDTree(Generic[T]):
 
         if node.right:
             self.display(node.right, depth + 1)
+
+    def _traverse(self, node: KDNode[T] | None):
+        if node is None:
+            return
+
+        yield from self._traverse(node.left)
+
+        for _ in range(node.count):
+            yield node.data
+
+        yield from self._traverse(node.right)
 
     def _search(self, point: T, node: KDNode[T] | None, depth: int) -> KDNode[T] | None:
         if node is None:
@@ -93,7 +108,7 @@ class KDTree(Generic[T]):
                 key=lambda n: n.data[axis]
             )
 
-    def _delete(self, node: KDNode[T], point: T, depth: int) -> KDNode[T]:
+    def _remove(self, node: KDNode[T], point: T, depth: int) -> KDNode[T]:
         if node is None:
             return None
 
@@ -109,20 +124,20 @@ class KDTree(Generic[T]):
                 node.data = min_node.data
                 node.count = min_node.count
                 min_node.count = 1
-                node.right = self._delete(node.right, min_node.data, depth + 1)
+                node.right = self._remove(node.right, min_node.data, depth + 1)
             elif node.left:
                 min_node = self._find_min(node.left, axis, depth + 1)
                 node.data = min_node.data
                 node.count = min_node.count
                 min_node.count = 1
-                node.right = self._delete(node.left, min_node.data, depth + 1)
+                node.right = self._remove(node.left, min_node.data, depth + 1)
                 node.left = None
             else:
                 return None
         elif point[axis] < node.data[axis]:
-            node.left = self._delete(node.left, point, depth + 1)
+            node.left = self._remove(node.left, point, depth + 1)
         else:
-            node.right = self._delete(node.right, point, depth + 1)
+            node.right = self._remove(node.right, point, depth + 1)
 
         return node
 
@@ -166,4 +181,21 @@ class KDTree(Generic[T]):
             self._search_radius(node.left, *args)
         else:
             self._search_radius(node.right, *args)
+
+    def __iter__(self):
+        yield from self._traverse(self.root)
+
+    def __len__(self):
+        if not self.is_dirty:
+            return self.size
+
+        count = 0
+
+        for _ in self:
+            count += 1
+
+        self.size = count
+        self.is_dirty = False
+
+        return count
 

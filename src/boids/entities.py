@@ -15,7 +15,7 @@ class Boid(PointLike):
 
 @dataclass
 class State:
-    boids: KDTree
+    boids: KDTree[Boid]
     running: bool = field(default=True)
     goal_position: Vector2 = field(default_factory=lambda: Vector2(0, 0))
     goal_next_rotation: int = field(default=0)

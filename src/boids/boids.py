@@ -18,13 +18,14 @@ from boids.constants import (
     SCREEN_WIDTH,
 )
 from boids.entities import Boid, State
+from boids.kdtree import KDTree
 from boids.rules import RuleContext, evaluate_rules
 from boids.settings import Settings, render_settings
 
 os.environ["SDL_VIDEO_X11_FORCE_EGL"] = "1"
 
-def create_boids(count: int) -> list[Boid]:
-    boids: list[Boid] = []
+def create_boids(count: int) -> KDTree[Boid]:
+    boids = KDTree[Boid](2)
 
     for _ in range(count):
         boid = Boid()
@@ -34,7 +35,7 @@ def create_boids(count: int) -> list[Boid]:
             random.randint(0, SCREEN_HEIGHT)
         )
 
-        boids.append(boid)
+        boids.insert(boid)
 
     return boids
 
@@ -65,16 +66,24 @@ def update_boids(state: State, settings: Settings, delta_time: float):
         boid.position += (boid.velocity * settings.speed * delta_time)
 
 def update_boid_count(state: State, settings: Settings):
-    diff = settings.count - len(state.boids)
+    delta = settings.count - len(state.boids)
 
-    if diff < 0:
-        for _ in range(diff, 0, 1):
-            index = random.randint(0, len(state.boids) - 1)
-            state.boids.remove(state.boids[index])
+    if delta < 0:
+        pending_remove = []
+
+        # Pick boids to remove.
+        for i, item in enumerate(state.boids):
+            if i >= -delta - 1:
+                break
+
+            pending_remove.append(item)
+
+        for item in pending_remove:
+            state.boids.remove(item)
 
         return
 
-    for _ in range(diff):
+    for _ in range(delta):
         boid = Boid()
 
         boid.position.update(
@@ -82,7 +91,7 @@ def update_boid_count(state: State, settings: Settings):
             random.randint(0, SCREEN_HEIGHT)
         )
 
-        state.boids.append(boid)
+        state.boids.insert(boid)
 
 
 def process_events(renderer: PygameRenderer, state: State):

@@ -27,6 +27,7 @@ class Settings:
     separation: int = field(default=35)
     max_speed: float = field(default=100)
     turn_factor: float = field(default=50)
+    locality_radius: float = field(default=300)
 
 def render_settings(settings: Settings) -> Settings:
     if imgui.begin_main_menu_bar():
@@ -63,6 +64,7 @@ def render_settings(settings: Settings) -> Settings:
         _, settings.alignment = imgui.slider_int("Alignment, %", settings.alignment, 1, 100)
         _, settings.separation = imgui.slider_int("Separation", settings.separation, 1, 100)
         _, settings.turn_factor = imgui.slider_float("Turn factor", settings.turn_factor, 1, 75)
+        _, settings.locality_radius = imgui.slider_float("Locality radius", settings.locality_radius, 5, 1000)
         imgui.tree_pop()
         imgui.spacing()
 
