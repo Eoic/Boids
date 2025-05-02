@@ -19,6 +19,11 @@ class KDTree:
     def insert(self, point: Vector2) -> KDNode:
         self.root = self._insert(point, self.root, 0)
 
+    def search(self, query: Vector2, radius: float) -> list[Vector2]:
+        results = []
+        self._search(self.root, query, radius, 0, results)
+        return results
+
     def _insert(self, point: Vector2, node: KDNode | None, dimension: int) -> KDNode:
         if node is None:
             node = KDNode(data=point)
@@ -29,7 +34,36 @@ class KDTree:
 
         return node
 
-    def display(self, node=None, depth=0):
+    def _search(
+        self,
+        node: KDNode | None,
+        query: Vector2,
+        radius: float,
+        depth: int,
+        results: list[Vector2]
+    ):
+        if node is None:
+            return
+
+        axis = depth % self.dimensions
+        data = node.data
+        distance = sum((data[i] - query[i]) ** 2 for i in range(self.dimensions))
+
+        if distance <= radius * radius:
+            results.append(data)
+
+        delta = abs(query[axis] - data[axis])
+        args = [query, radius, depth + 1, results]
+
+        if delta <= radius:
+            self._search(node.left, *args)
+            self._search(node.right, *args)
+        elif delta < 0:
+            self._search(node.left, *args)
+        else:
+            self._search(node.right, *args)
+
+    def display(self, node: KDNode=None, depth: int=0):
         if node is None:
             node = self.root
 

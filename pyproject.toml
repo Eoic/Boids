@@ -43,3 +43,8 @@ Issues = "https://github.com/Eoic/Boids/issues"
 
 [project.scripts]
 boids = "boids.boids:main"
+
+[tool.pytest.ini_options]
+addopts = [
+  "--import-mode=importlib",
+]
