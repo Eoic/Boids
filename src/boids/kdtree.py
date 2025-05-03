@@ -13,7 +13,6 @@ T = TypeVar('T', bound=PointLike)
 @dataclass
 class KDNode(Generic[T]):
     data: T
-    count: int = field(default=1)
     left: KDNode[T] | None = field(default=None)
     right: KDNode[T] | None = field(default=None)
 
@@ -32,16 +31,16 @@ class KDTree(Generic[T]):
         self.is_dirty = True
         self.root = self._remove(self.root, point, depth=0)
 
-    def search(self, point: T) -> tuple[T, int] | None:
+    def search(self, point: T) -> T | None:
         needle = self._search(point, self.root, 0)
 
         if needle is None:
             return None
 
-        return (needle.data, needle.count)
+        return needle.data
 
-    def search_radius(self, query: T, radius: float) -> list[tuple[T, int]]:
-        results: list[tuple[T, int]] = []
+    def search_radius(self, query: T, radius: float) -> list[T]:
+        results: list[T] = []
         self._search_radius(self.root, query, radius, 0, results)
         return results
 
@@ -68,10 +67,7 @@ class KDTree(Generic[T]):
             return
 
         yield from self._traverse(node.left)
-
-        for _ in range(node.count):
-            yield node.data
-
+        yield node.data
         yield from self._traverse(node.right)
 
     def _search(self, point: T, node: KDNode[T] | None, depth: int) -> KDNode[T] | None:
@@ -115,21 +111,13 @@ class KDTree(Generic[T]):
         axis = depth % self.dimensions
 
         if point == node.data:
-            if node.count > 1:
-                node.count -= 1
-                return node
-
             if node.right:
                 min_node = self._find_min(node.right, axis, depth + 1)
                 node.data = min_node.data
-                node.count = min_node.count
-                min_node.count = 1
                 node.right = self._remove(node.right, min_node.data, depth + 1)
             elif node.left:
                 min_node = self._find_min(node.left, axis, depth + 1)
                 node.data = min_node.data
-                node.count = min_node.count
-                min_node.count = 1
                 node.right = self._remove(node.left, min_node.data, depth + 1)
                 node.left = None
             else:
@@ -144,8 +132,6 @@ class KDTree(Generic[T]):
     def _insert(self, point: T, node: KDNode[T] | None, dimension: int) -> KDNode[T]:
         if node is None:
             node = KDNode[T](data=point)
-        elif point == node.data:
-             node.count += 1
         elif point[dimension] < node.data[dimension]:
             node.left = self._insert(point, node.left, (dimension + 1) % self.dimensions)
         else:
@@ -153,13 +139,15 @@ class KDTree(Generic[T]):
 
         return node
 
+    # FIXME: Tracking count of duplicate positions is not correct - unique instances may share the same position.
+    # FIXME: That's why changing count of boids through the settings acts weird.
     def _search_radius(
         self,
         node: KDNode[T] | None,
         query: T,
         radius: float,
         depth: int,
-        results: list[tuple[T, int]]
+        results: list[T]
     ):
         if node is None:
             return
@@ -169,7 +157,7 @@ class KDTree(Generic[T]):
         distance = sum((data[i] - query[i]) ** 2 for i in range(self.dimensions))
 
         if distance <= radius * radius:
-            results.append((data, node.count))
+            results.append(data)
 
         delta = abs(query[axis] - data[axis])
         args = [query, radius, depth + 1, results]
@@ -189,13 +177,13 @@ class KDTree(Generic[T]):
         if not self.is_dirty:
             return self.size
 
-        count = 0
+        size = 0
 
         for _ in self:
-            count += 1
+            size += 1
 
-        self.size = count
+        self.size = size
         self.is_dirty = False
 
-        return count
+        return size
 

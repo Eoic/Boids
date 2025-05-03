@@ -10,6 +10,7 @@ from boids.settings import Settings
 @dataclass(frozen=True)
 class RuleContext:
     boid: Boid
+    neighbors: list[Boid]
     state: State
     settings: Settings
 
@@ -19,15 +20,11 @@ def cohesion(context: RuleContext):
     of the flock. The center is the average position of all the boids,
     not including itself.
     """
-    boid_count = 0
     center = Vector2(0, 0)
-    neighbors = context.state.boids.search_radius(context.boid, context.settings.locality_radius)
+    boid_count = len(context.neighbors)
 
-    for boid, count in neighbors:
-        boid_count += count
-
-        for _ in range(count):
-            center = center + boid.position
+    for boid in context.neighbors:
+        center = center + boid.position
 
     if boid_count > 0:
         center = center / boid_count
@@ -41,12 +38,10 @@ def separation(context: RuleContext):
     away by the distance between the current boid and its neighbor.
     """
     center = Vector2(0, 0)
-    neighbors = context.state.boids.search_radius(context.boid, context.settings.locality_radius)
 
-    for boid, count in neighbors:
-        for _ in range(count):
-            if context.boid.position.distance_to(boid.position) < context.settings.separation:
-                center = center - (boid.position - context.boid.position)
+    for boid in context.neighbors:
+        if context.boid.position.distance_to(boid.position) < context.settings.separation:
+            center = center - (boid.position - context.boid.position)
 
     return center
 
@@ -55,15 +50,11 @@ def alignment(context: RuleContext):
     Find the average velocity of all the other boids
     and add a fraction of it to the boid's current velocity.
     """
-    boid_count = 0
+    boid_count = len(context.neighbors)
     center = Vector2(0, 0)
-    neighbors = context.state.boids.search_radius(context.boid, context.settings.locality_radius)
 
-    for boid, count in neighbors:
-        boid_count += count
-
-        for _ in range(count):
-            center = center + boid.velocity
+    for boid in context.neighbors:
+        center = center + boid.velocity
 
     if boid_count > 0:
         center = center / boid_count

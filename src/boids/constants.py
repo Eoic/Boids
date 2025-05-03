@@ -1,3 +1,5 @@
+import random
+
 # Rendering.
 FPS = 60
 SCREEN_WIDTH = 1920
@@ -11,4 +13,5 @@ BOUND_COLOR = (0.86, 0.08, 0.24, 0.80)
 # Entities
 BOID_COLOR = (0.86, 0.08, 0.24, 1.0)
 GOAL_COLOR = (0.2, 0.8, 0.1, 1.0)
-
+COLOR_POOL_SIZE = 10
+COLOR_POOL = [(random.random(), random.random(), random.random(), random.random()) for _ in range(COLOR_POOL_SIZE)]
