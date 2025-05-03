@@ -39,6 +39,7 @@ def create_boids(count: int) -> KDTree[Boid]:
 
         boids.insert(boid)
 
+    print(f"Created {len(boids)} entities.")
     return boids
 
 def update_goal(state: State, settings: Settings):
@@ -75,33 +76,20 @@ def update_boids(state: State, settings: Settings, delta_time: float):
         boid.position += (boid.velocity * settings.speed * delta_time)
 
 def update_boid_count(state: State, settings: Settings):
-    delta = settings.count - len(state.boids)
-
-    if delta < 0:
-        pending_remove = []
-
-        # Pick boids to remove.
-        for i, item in enumerate(state.boids):
-            if i >= -delta - 1:
-                break
-
-            pending_remove.append(item)
-
-        for item in pending_remove:
-            state.boids.remove(item)
-
+    if len(state.boids) == settings.count:
         return
 
-    for _ in range(delta):
-        boid = Boid()
+    tree = KDTree[Boid](2)
 
-        boid.position.update(
-            random.randint(0, SCREEN_WIDTH),
-            random.randint(0, SCREEN_HEIGHT)
-        )
+    for _ in range(settings.count):
+        tree.insert(Boid(
+            position=Vector2(
+                x=random.randint(0, SCREEN_WIDTH),
+                y=random.randint(0, SCREEN_WIDTH)
+            )
+        ))
 
-        state.boids.insert(boid)
-
+    state.boids = tree
 
 def process_events(renderer: PygameRenderer, state: State):
     for event in pygame.event.get():

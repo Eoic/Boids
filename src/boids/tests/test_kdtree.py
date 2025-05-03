@@ -1,30 +1,41 @@
+from __future__ import annotations
 
 import math
+from dataclasses import dataclass
 
 from pygame.math import Vector2
 
-from boids.kdtree import KDTree
+from boids.kdtree import KDTree, PointLike
 
+
+@dataclass
+class Entity(PointLike):
+    position: Vector2
+
+    def __getitem__(self, index: int) -> float:
+        return self.position[index]
+
+    def __eq__(self, value: Entity, /) -> bool:
+        return self.position == value.position
 
 def test_insert():
     tree = KDTree[Vector2](2)
-    tree.insert(Vector2(1, -7))
-    tree.insert(Vector2(1, -7))
-    point, count = tree.search(Vector2(1, -7))
-    assert point == Vector2(1, -7)
-    assert count == 2
+    tree.insert(Entity(Vector2(1, -7)))
+    tree.insert(Entity(Vector2(1, -7)))
+    item = tree.search(item=Entity(Vector2(1, -7)))
+    assert item == Entity(Vector2(1, -7))
 
 def test_iter_duplicate():
-    tree = KDTree[Vector2](2)
     count = 5
     tree_count = 0
+    tree = KDTree[Vector2](2)
 
-    for i in range(count):
-        tree.insert(Vector2(1, 5))
+    for _ in range(count):
+        tree.insert(Entity(Vector2(1, 5)))
 
     for item in tree:
         tree_count += 1
-        assert item == Vector2(1, 5)
+        assert item == Entity(Vector2(1, 5))
 
     assert tree_count == count
 
@@ -32,28 +43,28 @@ def test_len():
     tree = KDTree[Vector2](2)
 
     for _ in range(5):
-        tree.insert(Vector2(1, 2))
+        tree.insert(Entity(Vector2(1, 2)))
 
     for _ in range(5):
-        tree.insert(Vector2(2, 1))
+        tree.insert(Entity(Vector2(2, 1)))
 
     assert len(tree) == 10
 
 def test_remove():
     tree = KDTree[Vector2](2)
-    tree.insert(Vector2(8, 2))
-    tree.insert(Vector2(8, 2))
-    tree.insert(Vector2(8, 2))
-    assert tree.search(Vector2(8, 2))[1] == 3
+    tree.insert(Entity(Vector2(8, 2)))
+    tree.insert(Entity(Vector2(8, 2)))
+    tree.insert(Entity(Vector2(8, 2)))
+    assert tree.search(Entity(Vector2(8, 2))) == Entity(Vector2(8, 2))
 
-    tree.remove(Vector2(8, 2))
-    assert tree.search(Vector2(8, 2))[1] == 2
+    tree.remove(Entity(Vector2(8, 2)))
+    assert tree.search(Entity(Vector2(8, 2))) == Entity(Vector2(8, 2))
 
-    tree.remove(Vector2(8, 2))
-    assert tree.search(Vector2(8, 2))[1] == 1
+    tree.remove(Entity(Vector2(8, 2)))
+    assert tree.search(Entity(Vector2(8, 2))) == Entity(Vector2(8, 2))
 
-    tree.remove(Vector2(8, 2))
-    assert tree.search(Vector2(8, 2)) == None
+    tree.remove(Entity(Vector2(8, 2)))
+    assert tree.search(Entity(Vector2(8, 2))) == None
 
 def test_range_search_unique():
     radius = 5
@@ -71,8 +82,8 @@ def test_range_search_unique():
 
     inside_points = list(filter(lambda item: item[1], points))
     results = tree.search_radius(query, radius)
-    results_set = set(map(lambda item: (item[0].x, item[0].y, item[1]), results))
-    expected_set = (set(map(lambda item: (item[0].x, item[0].y, 1), inside_points)))
+    results_set = set(map(lambda item: (item.x, item.y), results))
+    expected_set = (set(map(lambda item: (item[0].x, item[0].y), inside_points)))
 
     assert len(inside_points) == len(results)
     assert results_set == expected_set
