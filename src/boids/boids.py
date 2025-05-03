@@ -11,8 +11,6 @@ from boids import graphics
 from boids.constants import (
     BOID_COLOR,
     BOUND_COLOR,
-    COLOR_POOL,
-    COLOR_POOL_SIZE,
     FPS,
     GOAL_COLOR,
     SCREEN_HEIGHT,
@@ -60,12 +58,6 @@ def limit_velocity(boid: Boid, settings: Settings):
         return boid.velocity.normalize() * settings.max_speed
 
     return boid.velocity
-
-def paint_groups(boids: list[Boid]):
-    for index, boid in enumerate(boids):
-        if not boid.color_applied:
-            boid.color = COLOR_POOL[index % COLOR_POOL_SIZE]
-            boid.color_applied = True
 
 def update_boids(state: State, settings: Settings, delta_time: float):
     for boid in state.boids:

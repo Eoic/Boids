@@ -9,8 +9,6 @@ from boids.kdtree import KDTree, PointLike
 
 @dataclass
 class Boid(PointLike):
-    color: tuple[float, float, float, float] | None = field(default=None)
-    color_applied: bool = field(default=False)
     velocity: Vector2 = field(default_factory=lambda: Vector2(0, 0))
     position: Vector2 = field(default_factory=lambda: Vector2(0, 0))
 
@@ -27,5 +25,4 @@ class State:
     goal_position: Vector2 = field(default_factory=lambda: Vector2(0, 0))
     goal_next_rotation: int = field(default=0)
     goal_alive: bool = field(default=False)
-    allocated_colors: list[tuple[float, float, float, float]] = field(default=[])
 

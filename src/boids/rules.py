@@ -20,48 +20,58 @@ def cohesion(context: RuleContext):
     of the flock. The center is the average position of all the boids,
     not including itself.
     """
+
     center = Vector2(0, 0)
-    boid_count = len(context.neighbors)
+
+    if not context.neighbors:
+        return center
 
     for boid in context.neighbors:
-        center = center + boid.position
+        center += boid.position
 
-    if boid_count > 0:
-        center = center / boid_count
+    center /= len(context.neighbors)
 
     return (center - context.boid.position) * (context.settings.cohesion / 100)
 
 def separation(context: RuleContext):
     """
-    Make sure boids do not collide with each other by checking whether
-    each boid is within a threshold distance, and if it is, move it
-    away by the distance between the current boid and its neighbor.
+    For each neighbor closer than `settings.separation`, compute
+    a unit vector pointing away from it, sum them up, and finally
+    scale by settings.separation_strength.
     """
     center = Vector2(0, 0)
+    radius = context.settings.separation_distance
 
-    for boid in context.neighbors:
-        if context.boid.position.distance_to(boid.position) < context.settings.separation:
-            center = center - (boid.position - context.boid.position)
+    for other in context.neighbors:
+        offset = context.boid.position - other.position
+        distance = offset.length()
 
-    return center
+        if 0 < distance < radius:
+            center += offset.normalize() * ((radius - distance) / radius)
+
+    return center * context.settings.separation_strength
 
 def alignment(context: RuleContext):
     """
     Find the average velocity of all the other boids
     and add a fraction of it to the boid's current velocity.
     """
-    boid_count = len(context.neighbors)
     center = Vector2(0, 0)
 
+    if not context.neighbors:
+        return center
+
     for boid in context.neighbors:
-        center = center + boid.velocity
+        center += boid.velocity
 
-    if boid_count > 0:
-        center = center / boid_count
+    center /= len(context.neighbors)
 
-    return (context.boid.velocity - center) * (context.settings.alignment / 100)
+    return (center - context.boid.velocity) * (context.settings.alignment / 100)
 
 def apply_wind(context: RuleContext):
+    if context.settings.wind_direction.length() > 0:
+        return context.settings.wind_direction.normalize() * context.settings.wind_strength
+
     return context.settings.wind_direction
 
 def limit_position(context: RuleContext):

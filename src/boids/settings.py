@@ -18,16 +18,18 @@ class Settings:
     goal_strength: int = field(default=1)
     goal_duration_sec: bool = field(default=5)
     wind_direction: Vector2 = field(default_factory=lambda: Vector2(0, 0))
+    wind_strength: Vector2 = field(default=0)
 
     # Boids
-    count: int = field(default=50)
-    speed: float = field(default=2.5)
-    cohesion: int = field(default=1)
-    alignment: int = field(default=8)
-    separation: int = field(default=35)
+    count: int = field(default=300)
+    speed: float = field(default=3.5)
+    cohesion: int = field(default=10)
+    alignment: int = field(default=50)
+    separation_distance: int = field(default=50)
+    separation_strength: float = field(default=50.0)
     max_speed: float = field(default=100)
     turn_factor: float = field(default=50)
-    locality_radius: float = field(default=300)
+    locality_radius: float = field(default=100)
 
 def render_settings(settings: Settings) -> Settings:
     if imgui.begin_main_menu_bar():
@@ -62,7 +64,8 @@ def render_settings(settings: Settings) -> Settings:
         _, settings.max_speed = imgui.slider_float("Max speed", settings.max_speed, 0, 100)
         _, settings.cohesion = imgui.slider_int("Cohesion, %", settings.cohesion, 1, 100)
         _, settings.alignment = imgui.slider_int("Alignment, %", settings.alignment, 1, 100)
-        _, settings.separation = imgui.slider_int("Separation", settings.separation, 1, 100)
+        _, settings.separation_distance = imgui.slider_int("Separation distance", settings.separation_distance, 1, 100)
+        _, settings.separation_strength = imgui.slider_int("Separation strength", settings.separation_strength, 1, 100)
         _, settings.turn_factor = imgui.slider_float("Turn factor", settings.turn_factor, 1, 75)
         _, settings.locality_radius = imgui.slider_float("Locality radius", settings.locality_radius, 5, 1000)
         imgui.tree_pop()
@@ -71,8 +74,9 @@ def render_settings(settings: Settings) -> Settings:
     if imgui.tree_node("Environment", flags=tree_node_flags):
         imgui.separator()
         imgui.text("Wind")
-        _, settings.wind_direction.x = imgui.slider_float("X", settings.wind_direction.x, -5.0, 5.0)
-        _, settings.wind_direction.y = imgui.slider_float("Y", settings.wind_direction.y, -5.0, 5.0)
+        _, settings.wind_direction.x = imgui.slider_float("X", settings.wind_direction.x, -1.0, 1.0)
+        _, settings.wind_direction.y = imgui.slider_float("Y", settings.wind_direction.y, -1.0, 1.0)
+        _, settings.wind_strength = imgui.slider_float("Strength", settings.wind_strength, 0.0, 100.0)
         _, settings.goal = imgui.checkbox("Random goal", settings.goal)
 
         if settings.goal:
