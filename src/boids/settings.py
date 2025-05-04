@@ -59,7 +59,7 @@ def render_settings(settings: Settings) -> Settings:
 
     if imgui.tree_node("Boids", flags=tree_node_flags):
         imgui.separator()
-        _, settings.count = imgui.slider_int("Count", settings.count, 1, 300)
+        _, settings.count = imgui.slider_int("Count", settings.count, 1, 1000)
         _, settings.speed = imgui.slider_float("Speed", settings.speed, 0.1, 10.0)
         _, settings.max_speed = imgui.slider_float("Max speed", settings.max_speed, 0, 100)
         _, settings.cohesion = imgui.slider_int("Cohesion, %", settings.cohesion, 1, 100)
