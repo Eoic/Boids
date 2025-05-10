@@ -6,12 +6,7 @@ from pygame import Vector2
 from boids.constants import TOP_MENU_HEIGHT
 
 
-def draw_circle(
-    center: Vector2,
-    radius: float,
-    color: tuple[float, float, float, float],
-    segments: int = 32
-):
+def draw_circle(center: Vector2, radius: float, color: tuple[float, float, float, float], segments: int = 32):
     gl.glColor4f(*color)
     gl.glBegin(gl.GL_TRIANGLE_FAN)
     gl.glVertex2f(center.x, center.y)
@@ -24,12 +19,14 @@ def draw_circle(
 
     gl.glEnd()
 
+
 def set_orthographic_projection(screen_size: tuple[int, int]):
     gl.glMatrixMode(gl.GL_PROJECTION)
     gl.glLoadIdentity()
     gl.glOrtho(0, screen_size[0], screen_size[1], 0, -1, 1)
     gl.glMatrixMode(gl.GL_MODELVIEW)
     gl.glLoadIdentity()
+
 
 def draw_filled_rect(x: float, y: float, width: float, height: float, color: tuple[float, float, float]):
     gl.glColor3f(*color)
@@ -40,11 +37,9 @@ def draw_filled_rect(x: float, y: float, width: float, height: float, color: tup
     gl.glVertex2f(x, y + height)
     gl.glEnd()
 
+
 def draw_rect_outline(
-    top_left: Vector2,
-    bottom_right: Vector2,
-    color: tuple[float, float, float, float],
-    line_width: float = 1.0
+    top_left: Vector2, bottom_right: Vector2, color: tuple[float, float, float, float], line_width: float = 1.0
 ):
     gl.glLineWidth(line_width)
     gl.glColor4f(*color)
@@ -54,4 +49,3 @@ def draw_rect_outline(
     gl.glVertex2f(*bottom_right.xy)
     gl.glVertex2f(top_left.x, bottom_right.y)
     gl.glEnd()
-

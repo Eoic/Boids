@@ -1,4 +1,3 @@
-
 # Rendering.
 FPS = 60
 SCREEN_WIDTH = 1920

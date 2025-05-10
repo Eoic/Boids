@@ -14,6 +14,7 @@ class RuleContext:
     state: State
     settings: Settings
 
+
 def cohesion(context: RuleContext):
     """
     Calculate velocity that moves the boid by a fraction towards the center
@@ -33,6 +34,7 @@ def cohesion(context: RuleContext):
 
     return (center - context.boid.position) * (context.settings.cohesion / 100)
 
+
 def separation(context: RuleContext):
     """
     For each neighbor closer than `settings.separation`, compute
@@ -51,6 +53,7 @@ def separation(context: RuleContext):
 
     return center * context.settings.separation_strength
 
+
 def alignment(context: RuleContext):
     """
     Find the average velocity of all the other boids
@@ -68,18 +71,20 @@ def alignment(context: RuleContext):
 
     return (center - context.boid.velocity) * (context.settings.alignment / 100)
 
+
 def apply_wind(context: RuleContext):
     if context.settings.wind_direction.length() > 0:
         return context.settings.wind_direction.normalize() * context.settings.wind_strength
 
     return context.settings.wind_direction
 
+
 def limit_position(context: RuleContext):
     velocity = Vector2(0, 0)
     margin_top = context.settings.bound_top_left.y
     margin_left = context.settings.bound_top_left.x
-    margin_bottom = SCREEN_HEIGHT -context.settings.bound_bottom_right.y
-    margin_right = SCREEN_WIDTH -context.settings.bound_bottom_right.x
+    margin_bottom = SCREEN_HEIGHT - context.settings.bound_bottom_right.y
+    margin_right = SCREEN_WIDTH - context.settings.bound_bottom_right.x
 
     if context.boid.position.x < margin_left:
         velocity.x = context.settings.turn_factor
@@ -93,11 +98,13 @@ def limit_position(context: RuleContext):
 
     return velocity
 
+
 def chase_goal(context: RuleContext):
     if not context.state.goal_alive:
         return Vector2(0, 0)
 
     return (context.state.goal_position - context.boid.position) * (context.settings.goal_strength / 100)
+
 
 rules = [
     cohesion,
@@ -108,6 +115,7 @@ rules = [
     limit_position,
 ]
 
+
 def evaluate_rules(context: RuleContext) -> Vector2:
     velocity = Vector2(0, 0)
 
@@ -115,4 +123,3 @@ def evaluate_rules(context: RuleContext) -> Vector2:
         velocity += rule(context)
 
     return velocity
-

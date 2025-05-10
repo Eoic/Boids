@@ -24,21 +24,19 @@ from boids.settings import Settings, render_settings
 
 os.environ["SDL_VIDEO_X11_FORCE_EGL"] = "1"
 
+
 def create_boids(count: int) -> KDTree[Boid]:
     boids = KDTree[Boid](2)
 
     for _ in range(count):
         boid = Boid()
 
-        boid.position.update(
-            random.randint(0, SCREEN_WIDTH),
-            random.randint(0, SCREEN_HEIGHT)
-        )
+        boid.position.update(random.randint(0, SCREEN_WIDTH), random.randint(0, SCREEN_HEIGHT))
 
         boids.insert(boid)
 
-    print(f"Created {len(boids)} entities.")
     return boids
+
 
 def update_goal(state: State, settings: Settings):
     if settings.goal:
@@ -53,11 +51,13 @@ def update_goal(state: State, settings: Settings):
     elif state.goal_alive:
         state.goal_alive = False
 
+
 def limit_velocity(boid: Boid, settings: Settings):
     if boid.velocity.length() > settings.max_speed:
         return boid.velocity.normalize() * settings.max_speed
 
     return boid.velocity
+
 
 def update_boids(state: State, settings: Settings, delta_time: float):
     for boid in state.boids:
@@ -65,7 +65,8 @@ def update_boids(state: State, settings: Settings, delta_time: float):
         context = RuleContext(boid=boid, state=state, settings=settings, neighbors=neighbors)
         boid.velocity += evaluate_rules(context)
         boid.velocity = limit_velocity(boid, settings)
-        boid.position += (boid.velocity * settings.speed * delta_time)
+        boid.position += boid.velocity * settings.speed * delta_time
+
 
 def update_boid_count(state: State, settings: Settings):
     if len(state.boids) == settings.count:
@@ -74,14 +75,10 @@ def update_boid_count(state: State, settings: Settings):
     tree = KDTree[Boid](2)
 
     for _ in range(settings.count):
-        tree.insert(Boid(
-            position=Vector2(
-                x=random.randint(0, SCREEN_WIDTH),
-                y=random.randint(0, SCREEN_WIDTH)
-            )
-        ))
+        tree.insert(Boid(position=Vector2(x=random.randint(0, SCREEN_WIDTH), y=random.randint(0, SCREEN_WIDTH))))
 
     state.boids = tree
+
 
 def process_events(renderer: PygameRenderer, state: State):
     for event in pygame.event.get():
@@ -89,6 +86,7 @@ def process_events(renderer: PygameRenderer, state: State):
             state.running = False
 
         renderer.process_event(event)
+
 
 def render(renderer: PygameRenderer, clock: pygame.time.Clock):
     delta_time = 0
@@ -122,10 +120,12 @@ def render(renderer: PygameRenderer, clock: pygame.time.Clock):
         pygame.display.flip()
         delta_time = clock.tick(FPS) / 1000
 
+
 def setup_state(settings: Settings) -> State:
     boids = create_boids(settings.count)
     state = State(boids=boids)
     return state
+
 
 def main():
     pygame.init()
@@ -140,4 +140,3 @@ def main():
     clock = pygame.time.Clock()
     render(renderer, clock)
     pygame.quit()
-

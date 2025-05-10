@@ -16,9 +16,9 @@ class Settings:
     # Environment
     goal: bool = field(default=False)
     goal_strength: int = field(default=1)
-    goal_duration_sec: bool = field(default=5)
+    goal_duration_sec: int = field(default=5)
     wind_direction: Vector2 = field(default_factory=lambda: Vector2(0, 0))
-    wind_strength: Vector2 = field(default=0)
+    wind_strength: int = field(default=0)
 
     # Boids
     count: int = field(default=300)
@@ -30,6 +30,7 @@ class Settings:
     max_speed: float = field(default=100)
     turn_factor: float = field(default=50)
     locality_radius: float = field(default=100)
+
 
 def render_settings(settings: Settings) -> Settings:
     if imgui.begin_main_menu_bar():
@@ -51,9 +52,13 @@ def render_settings(settings: Settings) -> Settings:
     if imgui.tree_node("Boundary", flags=tree_node_flags):
         imgui.separator()
         _, settings.bound_top_left.x = imgui.slider_float("X0", settings.bound_top_left.x, 0.0, SCREEN_WIDTH / 2)
-        _, settings.bound_top_left.y = imgui.slider_float("Y0", settings.bound_top_left.y, 0.0, SCREEN_HEIGHT/ 2)
-        _, settings.bound_bottom_right.x = imgui.slider_float("X1", settings.bound_bottom_right.x, SCREEN_WIDTH / 2, SCREEN_WIDTH)
-        _, settings.bound_bottom_right.y = imgui.slider_float("Y1", settings.bound_bottom_right.y, SCREEN_HEIGHT / 2, SCREEN_HEIGHT)
+        _, settings.bound_top_left.y = imgui.slider_float("Y0", settings.bound_top_left.y, 0.0, SCREEN_HEIGHT / 2)
+        _, settings.bound_bottom_right.x = imgui.slider_float(
+            "X1", settings.bound_bottom_right.x, SCREEN_WIDTH / 2, SCREEN_WIDTH
+        )
+        _, settings.bound_bottom_right.y = imgui.slider_float(
+            "Y1", settings.bound_bottom_right.y, SCREEN_HEIGHT / 2, SCREEN_HEIGHT
+        )
         imgui.tree_pop()
         imgui.spacing()
 
@@ -94,4 +99,3 @@ def render_settings(settings: Settings) -> Settings:
     imgui.end()
 
     return settings
-

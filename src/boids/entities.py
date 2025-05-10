@@ -15,8 +15,12 @@ class Boid(PointLike):
     def __getitem__(self, index: int) -> float:
         return self.position[index]
 
-    def __eq__(self, value: Boid, /) -> bool:
+    def __eq__(self, value: object, /) -> bool:
+        if not isinstance(value, Boid):
+            return NotImplemented
+
         return self.position == value.position
+
 
 @dataclass
 class State:
@@ -25,4 +29,3 @@ class State:
     goal_position: Vector2 = field(default_factory=lambda: Vector2(0, 0))
     goal_next_rotation: int = field(default=0)
     goal_alive: bool = field(default=False)
-

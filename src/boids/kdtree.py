@@ -9,7 +9,9 @@ class PointLike(Protocol):
     def __getitem__(self, index: int) -> float: ...
     def __eq__(self, value: object, /) -> bool: ...
 
-T = TypeVar('T', bound=PointLike)
+
+T = TypeVar("T", bound=PointLike)
+
 
 @dataclass
 class KDNode(Generic[T]):
@@ -17,12 +19,13 @@ class KDNode(Generic[T]):
     left: KDNode[T] | None = field(default=None)
     right: KDNode[T] | None = field(default=None)
 
+
 class KDTree(Generic[T]):
     def __init__(self, dimensions: int):
         self.size: int = 0
         self.is_dirty = False
         self.dimensions: int = dimensions
-        self.root: KDNode[T] = None
+        self.root: KDNode[T] | None = None
 
     def insert(self, item: T):
         self.is_dirty = True
@@ -45,7 +48,7 @@ class KDTree(Generic[T]):
         self._search_radius(self.root, query, radius, 0, results)
         return results
 
-    def display(self, node: KDNode[T]=None, depth: int=0):
+    def display(self, node: KDNode[T] | None = None, depth: int = 0):
         if node is None:
             node = self.root
 
@@ -85,7 +88,7 @@ class KDTree(Generic[T]):
         else:
             return self._search(item, node.right, depth + 1)
 
-    def _find_min(self, node: KDNode[T], axis: int, depth: int=0):
+    def _find_min(self, node: KDNode[T] | None, axis: int, depth: int = 0):
         if node is None:
             return None
 
@@ -97,15 +100,12 @@ class KDTree(Generic[T]):
 
             return self._find_min(node.left, axis, depth + 1)
         else:
-            left_min  = self._find_min(node.left, axis, depth + 1)
+            left_min = self._find_min(node.left, axis, depth + 1)
             right_min = self._find_min(node.right, axis, depth + 1)
 
-            return min(
-                [n for n in [node, left_min, right_min] if n is not None],
-                key=lambda n: n.data[axis]
-            )
+            return min([n for n in [node, left_min, right_min] if n is not None], key=lambda n: n.data[axis])
 
-    def _remove(self, node: KDNode[T], item: T, depth: int) -> KDNode[T]:
+    def _remove(self, node: KDNode[T] | None, item: T, depth: int) -> KDNode[T] | None:
         if node is None:
             return None
 
@@ -114,10 +114,18 @@ class KDTree(Generic[T]):
         if item == node.data:
             if node.right:
                 min_node = self._find_min(node.right, axis, depth + 1)
+
+                if min_node is None:
+                    return node.left
+
                 node.data = min_node.data
                 node.right = self._remove(node.right, min_node.data, depth + 1)
             elif node.left:
                 min_node = self._find_min(node.left, axis, depth + 1)
+
+                if min_node is None:
+                    return node.right
+
                 node.data = min_node.data
                 node.left = self._remove(node.left, min_node.data, depth + 1)
             else:
@@ -139,14 +147,7 @@ class KDTree(Generic[T]):
 
         return node
 
-    def _search_radius(
-        self,
-        node: KDNode[T] | None,
-        query: T,
-        radius: float,
-        depth: int,
-        results: list[T]
-    ):
+    def _search_radius(self, node: KDNode[T] | None, query: T, radius: float, depth: int, results: list[T]):
         if node is None:
             return
 
@@ -184,4 +185,3 @@ class KDTree(Generic[T]):
         self.is_dirty = False
 
         return size
-
