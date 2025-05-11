@@ -1,10 +1,14 @@
+import json
+import os
 import sys
 from dataclasses import dataclass, field
+from typing import TypedDict
 
 import imgui
 from pygame.math import Vector2
 
 from boids.constants import SCREEN_HEIGHT, SCREEN_WIDTH, TOP_MENU_HEIGHT
+from boids.settings import blueprint
 
 
 @dataclass
@@ -30,6 +34,42 @@ class Settings:
     max_speed: float = field(default=100)
     turn_factor: float = field(default=50)
     locality_radius: float = field(default=100)
+    is_dirty: bool = field(default=True)
+
+
+class SettingsSimple(TypedDict):
+    # Boundary
+    bound_top_left: dict[str, float]
+    bound_bottom_right: dict[str, float]
+
+    # Environment
+    goal: bool
+    goal_strength: int
+    goal_duration_sec: int
+    wind_direction: dict[str, float]
+    wind_strength: int
+
+    # Boids
+    count: int
+    speed: float
+    cohesion: int
+    alignment: int
+    separation_distance: int
+    separation_strength: float
+    max_speed: float
+    turn_factor: float
+    locality_radius: float
+    is_dirty: bool
+
+
+def load_settings() -> Settings:
+    # TODO: Load settings from a file.
+    return Settings()
+
+
+def save_settings(settings: Settings) -> None:
+    # TODO: Save settings to a file.
+    pass
 
 
 def render_settings(settings: Settings) -> Settings:
@@ -95,6 +135,9 @@ def render_settings(settings: Settings) -> Settings:
 
     if clicked_reset:
         settings = Settings()
+
+    if settings.is_dirty:
+        save_settings(settings)
 
     imgui.end()
 

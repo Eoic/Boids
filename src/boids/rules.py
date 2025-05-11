@@ -4,7 +4,7 @@ from pygame.math import Vector2
 
 from boids.constants import SCREEN_HEIGHT, SCREEN_WIDTH
 from boids.entities import Boid, State
-from boids.settings import Settings
+from boids.settings.settings import Settings
 
 
 @dataclass(frozen=True)

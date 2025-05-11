@@ -20,7 +20,7 @@ from boids.constants import (
 from boids.entities import Boid, State
 from boids.kdtree import KDTree
 from boids.rules import RuleContext, evaluate_rules
-from boids.settings import Settings, render_settings
+from boids.settings.settings import Settings, load_settings, render_settings
 
 os.environ["SDL_VIDEO_X11_FORCE_EGL"] = "1"
 
@@ -90,7 +90,7 @@ def process_events(renderer: PygameRenderer, state: State):
 
 def render(renderer: PygameRenderer, clock: pygame.time.Clock):
     delta_time = 0
-    settings = Settings()
+    settings = load_settings()
     state = setup_state(settings)
 
     while state.running:
