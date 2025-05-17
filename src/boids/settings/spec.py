@@ -4,7 +4,7 @@ spec = {
     "boundary": {
         "title": "Boundary",
         "fields": {
-            "bound_top_left": {
+            "top_left": {
                 "type": "Vector2",
                 "x": {
                     "title": "X0",
@@ -23,7 +23,7 @@ spec = {
                     "value": 0.0,
                 },
             },
-            "bound_bottom_right": {
+            "bottom_right": {
                 "type": "Vector2",
                 "x": {
                     "title": "X1",

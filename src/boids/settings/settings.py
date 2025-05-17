@@ -1,3 +1,5 @@
+import json
+import os
 import sys
 from copy import deepcopy
 from typing import Literal
@@ -47,7 +49,7 @@ class Settings:
                 raise ValueError("Unknown type.")
 
     def set(self, section: str, field: str, value: float | int | bool | tuple[float, float]):
-        if isinstance(value, tuple):
+        if isinstance(value, (tuple, list)):
             self._settings[section]["fields"][field]["x"]["value"] = value[0]
             self._settings[section]["fields"][field]["y"]["value"] = value[1]
         else:
@@ -69,15 +71,42 @@ class Settings:
 
         return is_enabled
 
+    def dump_dict(self) -> dict:
+        dict_settings = {}
+
+        for section, section_data in self._settings.items():
+            dict_settings[section] = {}
+
+            for field, field_data in section_data["fields"].items():
+                match field_data["type"]:
+                    case "Vector2":
+                        axes = [field_data[axis]["value"] for axis in ["x", "y"]]
+                        dict_settings[section][field] = (axes[0], axes[1])
+                    case _:
+                        dict_settings[section][field] = field_data["value"]
+
+        return dict_settings
+
+    def load_dict(self, data: dict):
+        for section, section_data in data.items():
+            for field, field_data in section_data.items():
+                self.set(section, field, field_data)
+
 
 def load_settings() -> Settings:
-    # TODO: Load from file, if available.
+    if os.path.exists("settings.json"):
+        with open("settings.json") as file:
+            settings = Settings()
+            settings_dict = json.load(file)
+            settings.load_dict(settings_dict)
+            return settings
+
     return Settings()
 
 
-def save_settings():
-    # TODO: Save settigns to a file in YAML format.
-    pass
+def save_settings(settings: Settings):
+    with open("settings.json", "w") as file:
+        json.dump(settings.dump_dict(), file, indent=4)
 
 
 def render_settings(settings: Settings) -> Settings:
@@ -98,11 +127,11 @@ def render_settings(settings: Settings) -> Settings:
     tree_node_flags = imgui.TREE_NODE_DEFAULT_OPEN | imgui.TREE_NODE_FRAME_PADDING
     is_dirty = False
 
-    for section, node in spec.items():
-        if imgui.tree_node(node["title"], flags=tree_node_flags):
+    for section, section_data in spec.items():
+        if imgui.tree_node(section_data["title"], flags=tree_node_flags):
             imgui.separator()
 
-            for field, value in node["fields"].items():
+            for field, value in section_data["fields"].items():
                 is_enabled = settings.is_setting_enabled(section, field)
 
                 if not is_enabled:
@@ -150,9 +179,10 @@ def render_settings(settings: Settings) -> Settings:
 
     if clicked_reset:
         settings = Settings()
+        is_dirty = True
 
-    # if is_dirty:
-    #     save_settings(settings)
+    if is_dirty:
+        save_settings(settings)
 
     imgui.end()
 

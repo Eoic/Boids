@@ -1,5 +1,4 @@
 import os
-import random
 import secrets
 from typing import cast
 
@@ -40,7 +39,7 @@ def create_boids(count: int) -> KDTree[Boid]:
 
 def update_goal(state: State, settings: Settings):
     if settings.get("goal", "enabled"):
-        goal_duration: int = cast(int, settings.get("goal", "duration_sec"))
+        goal_duration = cast(int, settings.get("goal", "duration_sec"))
 
         if not state.goal_alive:
             state.goal_position = Vector2(secrets.randbelow(SCREEN_WIDTH + 1), secrets.randbelow(SCREEN_HEIGHT + 1))
@@ -55,7 +54,7 @@ def update_goal(state: State, settings: Settings):
 
 
 def limit_velocity(boid: Boid, settings: Settings):
-    max_speed: float = cast(float, settings.get("boids", "max_speed"))
+    max_speed = cast(float, settings.get("boids", "max_speed"))
 
     if boid.velocity.length() > max_speed:
         return boid.velocity.normalize() * max_speed
@@ -64,8 +63,8 @@ def limit_velocity(boid: Boid, settings: Settings):
 
 
 def update_boids(state: State, settings: Settings, delta_time: float):
-    speed: float = cast(float, settings.get("boids", "speed"))
-    locality: float = cast(float, settings.get("boids", "locality_radius"))
+    speed = cast(float, settings.get("boids", "speed"))
+    locality = cast(float, settings.get("boids", "locality_radius"))
 
     for boid in state.boids:
         neighbors = state.boids.search_radius(boid, locality)
@@ -75,8 +74,8 @@ def update_boids(state: State, settings: Settings, delta_time: float):
         boid.position += boid.velocity * speed * delta_time
 
 
-def update_boid_count(state: State, settings: dict):
-    count: int = cast(int, settings.get("boids", "count"))
+def update_boid_count(state: State, settings: Settings):
+    count = cast(int, settings.get("boids", "count"))
 
     if len(state.boids) == count:
         return
@@ -126,7 +125,9 @@ def render(renderer: PygameRenderer, clock: pygame.time.Clock):
         for boid in state.boids:
             graphics.draw_circle(boid.position, 5, BOID_COLOR)
 
-        graphics.draw_rect_outline(settings.bound_top_left, settings.bound_bottom_right, BOUND_COLOR, line_width=2.0)
+        top_left = cast(tuple, settings.get("boundary", "top_left"))
+        bottom_right = cast(tuple, settings.get("boundary", "bottom_right"))
+        graphics.draw_rect_outline(top_left, bottom_right, BOUND_COLOR, line_width=2.0)
 
         if state.goal_alive:
             graphics.draw_circle(state.goal_position, 10, GOAL_COLOR)
@@ -138,7 +139,8 @@ def render(renderer: PygameRenderer, clock: pygame.time.Clock):
 
 
 def setup_state(settings: Settings) -> State:
-    boids = create_boids(settings.get("boids", "count"))
+    count = cast(int, settings.get("boids", "count"))
+    boids = create_boids(count)
     state = State(boids=boids)
     return state
 
