@@ -28,7 +28,13 @@ def set_orthographic_projection(screen_size: tuple[int, int]):
     gl.glLoadIdentity()
 
 
-def draw_filled_rect(x: float, y: float, width: float, height: float, color: tuple[float, float, float]):
+def draw_filled_rect(
+    x: float,
+    y: float,
+    width: float,
+    height: float,
+    color: tuple[float, float, float],
+):
     gl.glColor3f(*color)
     gl.glBegin(gl.GL_QUADS)
     gl.glVertex2f(x, y)
@@ -39,13 +45,16 @@ def draw_filled_rect(x: float, y: float, width: float, height: float, color: tup
 
 
 def draw_rect_outline(
-    top_left: Vector2, bottom_right: Vector2, color: tuple[float, float, float, float], line_width: float = 1.0
+    top_left: tuple[float, float],
+    bottom_right: tuple[float, float],
+    color: tuple[float, float, float, float],
+    line_width: float = 1.0,
 ):
     gl.glLineWidth(line_width)
     gl.glColor4f(*color)
     gl.glBegin(gl.GL_LINE_LOOP)
-    gl.glVertex2f(top_left.x, top_left.y + TOP_MENU_HEIGHT)
-    gl.glVertex2f(bottom_right.x, top_left.y + TOP_MENU_HEIGHT)
-    gl.glVertex2f(*bottom_right.xy)
-    gl.glVertex2f(top_left.x, bottom_right.y)
+    gl.glVertex2f(top_left[0], top_left[1] + TOP_MENU_HEIGHT)
+    gl.glVertex2f(bottom_right[0], top_left[1] + TOP_MENU_HEIGHT)
+    gl.glVertex2f(*bottom_right)
+    gl.glVertex2f(top_left[0], bottom_right[1])
     gl.glEnd()

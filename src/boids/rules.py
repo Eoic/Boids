@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import cast
 
 from pygame.math import Vector2
 
@@ -23,6 +24,7 @@ def cohesion(context: RuleContext):
     """
 
     center = Vector2(0, 0)
+    cohesion = cast(int, context.settings.get("boids", "cohesion"))
 
     if not context.neighbors:
         return center
@@ -32,7 +34,7 @@ def cohesion(context: RuleContext):
 
     center /= len(context.neighbors)
 
-    return (center - context.boid.position) * (context.settings.cohesion / 100)
+    return (center - context.boid.position) * (cohesion / 100)
 
 
 def separation(context: RuleContext):
@@ -42,7 +44,8 @@ def separation(context: RuleContext):
     scale by settings.separation_strength.
     """
     center = Vector2(0, 0)
-    radius = context.settings.separation_distance
+    radius = cast(int, context.settings.get("boids", "separation_distance"))
+    strength = cast(int, context.settings.get("boids", "separation_strength"))
 
     for other in context.neighbors:
         offset = context.boid.position - other.position
@@ -51,7 +54,7 @@ def separation(context: RuleContext):
         if 0 < distance < radius:
             center += offset.normalize() * ((radius - distance) / radius)
 
-    return center * context.settings.separation_strength
+    return center * strength
 
 
 def alignment(context: RuleContext):
@@ -64,37 +67,46 @@ def alignment(context: RuleContext):
     if not context.neighbors:
         return center
 
+    alignment = cast(int, context.settings.get("boids", "alignment"))
+
     for boid in context.neighbors:
         center += boid.velocity
 
     center /= len(context.neighbors)
 
-    return (center - context.boid.velocity) * (context.settings.alignment / 100)
+    return (center - context.boid.velocity) * (alignment / 100)
 
 
 def apply_wind(context: RuleContext):
-    if context.settings.wind_direction.length() > 0:
-        return context.settings.wind_direction.normalize() * context.settings.wind_strength
+    wind_direction_raw = cast(tuple, context.settings.get("environment", "wind_direction"))
+    wind_direction = Vector2(wind_direction_raw[0], wind_direction_raw[1])
+    wind_strength = cast(float, context.settings.get("environment", "wind_strength"))
 
-    return context.settings.wind_direction
+    if wind_direction.length() > 0:
+        return wind_direction.normalize() * wind_strength
+
+    return wind_direction
 
 
 def limit_position(context: RuleContext):
     velocity = Vector2(0, 0)
-    margin_top = context.settings.bound_top_left.y
-    margin_left = context.settings.bound_top_left.x
-    margin_bottom = SCREEN_HEIGHT - context.settings.bound_bottom_right.y
-    margin_right = SCREEN_WIDTH - context.settings.bound_bottom_right.x
+    top_left = cast(tuple, context.settings.get("boundary", "top_left"))
+    bottom_right = cast(tuple, context.settings.get("boundary", "bottom_right"))
+    turn_factor = cast(float, context.settings.get("boids", "turn_factor"))
+    margin_top = top_left[1]
+    margin_left = top_left[0]
+    margin_right = SCREEN_WIDTH - bottom_right[0]
+    margin_bottom = SCREEN_HEIGHT - bottom_right[1]
 
     if context.boid.position.x < margin_left:
-        velocity.x = context.settings.turn_factor
+        velocity.x = turn_factor
     elif context.boid.position.x > SCREEN_WIDTH - margin_right:
-        velocity.x = -context.settings.turn_factor
+        velocity.x = -turn_factor
 
     if context.boid.position.y < margin_top:
-        velocity.y = context.settings.turn_factor
+        velocity.y = turn_factor
     elif context.boid.position.y > SCREEN_HEIGHT - margin_bottom:
-        velocity.y = -context.settings.turn_factor
+        velocity.y = -turn_factor
 
     return velocity
 
@@ -103,7 +115,8 @@ def chase_goal(context: RuleContext):
     if not context.state.goal_alive:
         return Vector2(0, 0)
 
-    return (context.state.goal_position - context.boid.position) * (context.settings.goal_strength / 100)
+    goal_strength = cast(int, context.settings.get("goal", "strength"))
+    return (context.state.goal_position - context.boid.position) * (goal_strength / 100)
 
 
 rules = [
