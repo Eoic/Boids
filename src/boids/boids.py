@@ -20,7 +20,7 @@ from boids.constants import (
 from boids.entities import Boid, State
 from boids.kdtree import KDTree
 from boids.rules import RuleContext, evaluate_rules
-from boids.settings.settings import load_settings, render_settings
+from boids.settings.settings import Settings, load_settings, render_settings
 
 os.environ["SDL_VIDEO_X11_FORCE_EGL"] = "1"
 
@@ -121,8 +121,8 @@ def render(renderer: PygameRenderer, clock: pygame.time.Clock):
         delta_time = clock.tick(FPS) / 1000
 
 
-def setup_state(settings: dict) -> State:
-    boids = create_boids(settings["boids"]["fields"]["count"]["value"])
+def setup_state(settings: Settings) -> State:
+    boids = create_boids(settings.get("boids", "count"))
     state = State(boids=boids)
     return state
 

@@ -1,96 +1,86 @@
 import sys
 from copy import deepcopy
-from typing import Any
+from typing import Literal
 
 import imgui
-from pygame import Vector2
 
 from boids.constants import TOP_MENU_HEIGHT
 from boids.settings.spec import spec
 
-# @dataclass
-# class Settings:
-#     # Boundary
-#     bound_top_left: Vector2 = field(default_factory=lambda: Vector2(0, 0))
-#     bound_bottom_right: Vector2 = field(default_factory=lambda: Vector2(SCREEN_WIDTH, SCREEN_HEIGHT))
-
-#     # Environment
-#     goal: bool = field(default=False)
-#     goal_strength: int = field(default=1)
-#     goal_duration_sec: int = field(default=5)
-#     wind_direction: Vector2 = field(default_factory=lambda: Vector2(0, 0))
-#     wind_strength: int = field(default=0)
-
-#     # Boids
-#     count: int = field(default=300)
-#     speed: float = field(default=3.5)
-#     cohesion: int = field(default=10)
-#     alignment: int = field(default=50)
-#     separation_distance: int = field(default=50)
-#     separation_strength: float = field(default=50.0)
-#     max_speed: float = field(default=100)
-#     turn_factor: float = field(default=50)
-#     locality_radius: float = field(default=100)
-#     is_dirty: bool = field(default=True)
-
-
-# def build_settings() -> dict:
-#     settings = deepcopy(spec)
-
-# for item in spec:
-#     for key, desc in item["section"].items():
-#         match desc["type"]:
-#             case "Vector2":
-#                 for axis in ["x", "y"]:
-#                     settings[key][axis] = desc[axis]["default"]
-#             case "float" | "int" | "bool":
-#                 settings[key] = desc["default"]
-#             case _:
-#                 raise ValueError("Unknown setting type.")
-
-# return settings
-
 
 class Settings:
     def __init__(self):
-        self._settings = deepcopy(spec)
+        self._settings: dict = deepcopy(spec)
 
-    def get(self, section: str, field: str):
-        field = self._settings[section]["fields"][field]
-        field_type = field["type"]
+    def get(self, section: str, field: str) -> int | float | bool | tuple[float, float]:
+        field_data: dict | None = self._settings.get(section, {}).get("fields", {}).get(field, None)
 
-        match field["type"]:
+        if field_data is None:
+            raise KeyError(f"Setting '{section}.{field}' does not exist.")
+
+        field_type = field_data.get("type", None)
+
+        if field_type is None:
+            raise ValueError("Setting field does not have a specified type.")
+
+        match field_type:
             case "Vector2":
-                return Vector2(field["x"]["value"], field["y"]["value"])
+                return (field_data["x"]["value"], field_data["y"]["value"])
             case _:
-                return field["value"]
+                return field_data["value"]
 
-    def set(self, section: str, field: str):
-        pass
+    def get_field(self, section: str, field: str):
+        field_data: dict | None = self._settings.get(section, {}).get("fields", {}).get(field, None)
+
+        if field_data is None:
+            raise KeyError(f"Setting '{section}.{field}' does not exist.")
+
+        return field_data
+
+    def get_slider(self, value_type: Literal["int", "float"]):
+        match value_type:
+            case "int":
+                return imgui.slider_int
+            case "float":
+                return imgui.slider_float
+            case _:
+                raise ValueError("Unknown type.")
+
+    def set(self, section: str, field: str, value: float | int | bool | tuple[float, float]):
+        if isinstance(value, tuple):
+            self._settings[section]["fields"][field]["x"]["value"] = value[0]
+            self._settings[section]["fields"][field]["y"]["value"] = value[1]
+        else:
+            self._settings[section]["fields"][field]["value"] = value
+
+    def is_setting_enabled(self, section: str, field: str):
+        is_enabled = True
+        condition_path = self._settings[section]["fields"][field].get("condition")
+
+        if condition_path:
+            current = self._settings
+            tokens = condition_path.split(".")
+
+            for token in tokens:
+                current = current.get(token, {})
+
+            if isinstance(current, bool):
+                is_enabled &= current
+
+        return is_enabled
 
 
-def load_settings() -> dict:
-    return deepcopy(spec)
+def load_settings() -> Settings:
+    # TODO: Load from file, if available.
+    return Settings()
 
 
-def is_setting_visible(settings, section_key, key):
-    is_visible = True
-    condition_path = settings[section_key]["fields"][key].get("condition")
-
-    if condition_path:
-        current = settings
-        tokens = condition_path.split(".")
-
-        for token in tokens:
-            current = current.get(token, {})
-
-        if isinstance(current, bool):
-            is_visible &= current
-
-    return is_visible
+def save_settings():
+    # TODO: Save settigns to a file in YAML format.
+    pass
 
 
-def render_settings(settings: dict) -> dict:
+def render_settings(settings: Settings) -> Settings:
     if imgui.begin_main_menu_bar():
         if imgui.begin_menu("File", True):
             clicked_quit, _ = imgui.menu_item("Quit", "Cmd+Q", False, True)
@@ -106,45 +96,50 @@ def render_settings(settings: dict) -> dict:
     imgui.set_next_window_size(0, 0)
     imgui.begin("Settings", flags=imgui.WINDOW_ALWAYS_AUTO_RESIZE)
     tree_node_flags = imgui.TREE_NODE_DEFAULT_OPEN | imgui.TREE_NODE_FRAME_PADDING
+    is_dirty = False
 
-    for section_key, node in spec.items():
+    for section, node in spec.items():
         if imgui.tree_node(node["title"], flags=tree_node_flags):
             imgui.separator()
 
-            for key, value in node["fields"].items():
-                is_visible = is_setting_visible(settings, section_key, key)
+            for field, value in node["fields"].items():
+                is_enabled = settings.is_setting_enabled(section, field)
 
-                if not is_visible:
+                if not is_enabled:
                     continue
+
+                field_data = settings.get_field(section, field)
 
                 match value["type"]:
                     case "Vector2":
+                        axes = []
+
                         for axis in ["x", "y"]:
-                            _, settings[section_key]["fields"][key][axis]["value"] = imgui.slider_float(
+                            dirty, axis_value = imgui.slider_float(
                                 value[axis]["title"],
-                                settings[section_key]["fields"][key][axis]["value"],
-                                settings[section_key]["fields"][key][axis]["min"],
-                                settings[section_key]["fields"][key][axis]["max"],
+                                field_data[axis]["value"],
+                                field_data[axis]["min"],
+                                field_data[axis]["max"],
                             )
-                    case "int":
-                        _, settings[section_key]["fields"][key]["value"] = imgui.slider_int(
+
+                            axes.append(axis_value)
+                            is_dirty |= dirty
+
+                        settings.set(section, field, (axes[0], axes[1]))
+                    case "int" | "float":
+                        dirty, setting_value = settings.get_slider(value["type"])(
                             value["title"],
-                            settings[section_key]["fields"][key]["value"],
-                            settings[section_key]["fields"][key]["min"],
-                            settings[section_key]["fields"][key]["max"],
+                            field_data["value"],
+                            field_data["min"],
+                            field_data["max"],
                         )
-                    case "float":
-                        _, settings[section_key]["fields"][key]["value"] = imgui.slider_float(
-                            value["title"],
-                            settings[section_key]["fields"][key]["value"],
-                            settings[section_key]["fields"][key]["min"],
-                            settings[section_key]["fields"][key]["max"],
-                        )
+
+                        is_dirty |= dirty
+                        settings.set(section, field, setting_value)
                     case "bool":
-                        _, settings[section_key]["fields"][key]["value"] = imgui.checkbox(
-                            value["title"],
-                            settings[section_key]["fields"][key]["value"],
-                        )
+                        dirty, setting_value = imgui.checkbox(value["title"], field_data["value"])
+                        is_dirty |= dirty
+                        settings.set(section, field, setting_value)
                     case _:
                         raise ValueError("Unknown setting type.")
 
@@ -154,9 +149,9 @@ def render_settings(settings: dict) -> dict:
     clicked_reset = imgui.button("Reset Settings")
 
     if clicked_reset:
-        settings = build_settings()
+        settings = Settings()
 
-    # if settings.is_dirty:
+    # if is_dirty:
     #     save_settings(settings)
 
     imgui.end()
