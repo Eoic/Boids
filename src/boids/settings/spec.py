@@ -31,7 +31,7 @@ spec = {
                     "min": SCREEN_WIDTH / 2,
                     "max": SCREEN_WIDTH,
                     "default": SCREEN_WIDTH,
-                    "value": 0.0,
+                    "value": SCREEN_WIDTH,
                 },
                 "y": {
                     "title": "Y1",
@@ -39,7 +39,7 @@ spec = {
                     "min": SCREEN_HEIGHT / 2,
                     "max": SCREEN_HEIGHT,
                     "default": SCREEN_HEIGHT,
-                    "value": 0.0,
+                    "value": SCREEN_HEIGHT,
                 },
             },
         },
@@ -162,7 +162,7 @@ spec = {
                 "default": False,
                 "value": False,
             },
-            "goal_duration_sec": {
+            "duration_sec": {
                 "title": "Goal duration, s.",
                 "type": "int",
                 "min": 1,
@@ -171,7 +171,7 @@ spec = {
                 "value": 5,
                 "condition": "goal.fields.enabled.value",
             },
-            "goal_strength": {
+            "strength": {
                 "title": "Goal strength, %",
                 "type": "int",
                 "min": 1,

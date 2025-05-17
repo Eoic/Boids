@@ -4,6 +4,7 @@ from pygame.math import Vector2
 
 from boids.constants import SCREEN_HEIGHT, SCREEN_WIDTH
 from boids.entities import Boid, State
+from boids.settings.settings import Settings
 
 
 @dataclass(frozen=True)
@@ -11,7 +12,7 @@ class RuleContext:
     boid: Boid
     neighbors: list[Boid]
     state: State
-    settings: dict
+    settings: Settings
 
 
 def cohesion(context: RuleContext):
