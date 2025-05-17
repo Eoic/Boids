@@ -20,7 +20,7 @@ from boids.constants import (
 from boids.entities import Boid, State
 from boids.kdtree import KDTree
 from boids.rules import RuleContext, evaluate_rules
-from boids.settings.settings import Settings, load_settings, render_settings
+from boids.settings.settings import load_settings, render_settings
 
 os.environ["SDL_VIDEO_X11_FORCE_EGL"] = "1"
 
@@ -38,7 +38,7 @@ def create_boids(count: int) -> KDTree[Boid]:
     return boids
 
 
-def update_goal(state: State, settings: Settings):
+def update_goal(state: State, settings: dict):
     if settings.goal:
         if not state.goal_alive:
             state.goal_position = Vector2(random.randint(0, SCREEN_WIDTH), random.randint(0, SCREEN_HEIGHT))
@@ -52,14 +52,14 @@ def update_goal(state: State, settings: Settings):
         state.goal_alive = False
 
 
-def limit_velocity(boid: Boid, settings: Settings):
+def limit_velocity(boid: Boid, settings: dict):
     if boid.velocity.length() > settings.max_speed:
         return boid.velocity.normalize() * settings.max_speed
 
     return boid.velocity
 
 
-def update_boids(state: State, settings: Settings, delta_time: float):
+def update_boids(state: State, settings: dict, delta_time: float):
     for boid in state.boids:
         neighbors = state.boids.search_radius(boid, settings.locality_radius)
         context = RuleContext(boid=boid, state=state, settings=settings, neighbors=neighbors)
@@ -68,7 +68,7 @@ def update_boids(state: State, settings: Settings, delta_time: float):
         boid.position += boid.velocity * settings.speed * delta_time
 
 
-def update_boid_count(state: State, settings: Settings):
+def update_boid_count(state: State, settings: dict):
     if len(state.boids) == settings.count:
         return
 
@@ -99,9 +99,9 @@ def render(renderer: PygameRenderer, clock: pygame.time.Clock):
         imgui.new_frame()
 
         settings = render_settings(settings)
-        update_boid_count(state, settings)
-        update_goal(state, settings)
-        update_boids(state, settings, delta_time)
+        # update_boid_count(state, settings)
+        # update_goal(state, settings)
+        # update_boids(state, settings, delta_time)
 
         gl.glClearColor(0.08, 0.1, 0.12, 1)
         gl.glClear(gl.GL_COLOR_BUFFER_BIT)
@@ -110,10 +110,10 @@ def render(renderer: PygameRenderer, clock: pygame.time.Clock):
         for boid in state.boids:
             graphics.draw_circle(boid.position, 5, BOID_COLOR)
 
-        graphics.draw_rect_outline(settings.bound_top_left, settings.bound_bottom_right, BOUND_COLOR, line_width=2.0)
+        # graphics.draw_rect_outline(settings.bound_top_left, settings.bound_bottom_right, BOUND_COLOR, line_width=2.0)
 
-        if state.goal_alive:
-            graphics.draw_circle(state.goal_position, 10, GOAL_COLOR)
+        # if state.goal_alive:
+        #     graphics.draw_circle(state.goal_position, 10, GOAL_COLOR)
 
         imgui.render()
         renderer.render(imgui.get_draw_data())
@@ -121,8 +121,8 @@ def render(renderer: PygameRenderer, clock: pygame.time.Clock):
         delta_time = clock.tick(FPS) / 1000
 
 
-def setup_state(settings: Settings) -> State:
-    boids = create_boids(settings.count)
+def setup_state(settings: dict) -> State:
+    boids = create_boids(settings["boids"]["fields"]["count"]["value"])
     state = State(boids=boids)
     return state
 

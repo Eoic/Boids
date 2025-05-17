@@ -1,78 +1,96 @@
-import json
-import os
 import sys
-from dataclasses import dataclass, field
-from typing import TypedDict
+from copy import deepcopy
+from typing import Any
 
 import imgui
-from pygame.math import Vector2
+from pygame import Vector2
 
-from boids.constants import SCREEN_HEIGHT, SCREEN_WIDTH, TOP_MENU_HEIGHT
-from boids.settings import blueprint
+from boids.constants import TOP_MENU_HEIGHT
+from boids.settings.spec import spec
+
+# @dataclass
+# class Settings:
+#     # Boundary
+#     bound_top_left: Vector2 = field(default_factory=lambda: Vector2(0, 0))
+#     bound_bottom_right: Vector2 = field(default_factory=lambda: Vector2(SCREEN_WIDTH, SCREEN_HEIGHT))
+
+#     # Environment
+#     goal: bool = field(default=False)
+#     goal_strength: int = field(default=1)
+#     goal_duration_sec: int = field(default=5)
+#     wind_direction: Vector2 = field(default_factory=lambda: Vector2(0, 0))
+#     wind_strength: int = field(default=0)
+
+#     # Boids
+#     count: int = field(default=300)
+#     speed: float = field(default=3.5)
+#     cohesion: int = field(default=10)
+#     alignment: int = field(default=50)
+#     separation_distance: int = field(default=50)
+#     separation_strength: float = field(default=50.0)
+#     max_speed: float = field(default=100)
+#     turn_factor: float = field(default=50)
+#     locality_radius: float = field(default=100)
+#     is_dirty: bool = field(default=True)
 
 
-@dataclass
+# def build_settings() -> dict:
+#     settings = deepcopy(spec)
+
+# for item in spec:
+#     for key, desc in item["section"].items():
+#         match desc["type"]:
+#             case "Vector2":
+#                 for axis in ["x", "y"]:
+#                     settings[key][axis] = desc[axis]["default"]
+#             case "float" | "int" | "bool":
+#                 settings[key] = desc["default"]
+#             case _:
+#                 raise ValueError("Unknown setting type.")
+
+# return settings
+
+
 class Settings:
-    # Boundary
-    bound_top_left: Vector2 = field(default_factory=lambda: Vector2(0, 0))
-    bound_bottom_right: Vector2 = field(default_factory=lambda: Vector2(SCREEN_WIDTH, SCREEN_HEIGHT))
+    def __init__(self):
+        self._settings = deepcopy(spec)
 
-    # Environment
-    goal: bool = field(default=False)
-    goal_strength: int = field(default=1)
-    goal_duration_sec: int = field(default=5)
-    wind_direction: Vector2 = field(default_factory=lambda: Vector2(0, 0))
-    wind_strength: int = field(default=0)
+    def get(self, section: str, field: str):
+        field = self._settings[section]["fields"][field]
+        field_type = field["type"]
 
-    # Boids
-    count: int = field(default=300)
-    speed: float = field(default=3.5)
-    cohesion: int = field(default=10)
-    alignment: int = field(default=50)
-    separation_distance: int = field(default=50)
-    separation_strength: float = field(default=50.0)
-    max_speed: float = field(default=100)
-    turn_factor: float = field(default=50)
-    locality_radius: float = field(default=100)
-    is_dirty: bool = field(default=True)
+        match field["type"]:
+            case "Vector2":
+                return Vector2(field["x"]["value"], field["y"]["value"])
+            case _:
+                return field["value"]
+
+    def set(self, section: str, field: str):
+        pass
 
 
-class SettingsSimple(TypedDict):
-    # Boundary
-    bound_top_left: dict[str, float]
-    bound_bottom_right: dict[str, float]
-
-    # Environment
-    goal: bool
-    goal_strength: int
-    goal_duration_sec: int
-    wind_direction: dict[str, float]
-    wind_strength: int
-
-    # Boids
-    count: int
-    speed: float
-    cohesion: int
-    alignment: int
-    separation_distance: int
-    separation_strength: float
-    max_speed: float
-    turn_factor: float
-    locality_radius: float
-    is_dirty: bool
+def load_settings() -> dict:
+    return deepcopy(spec)
 
 
-def load_settings() -> Settings:
-    # TODO: Load settings from a file.
-    return Settings()
+def is_setting_visible(settings, section_key, key):
+    is_visible = True
+    condition_path = settings[section_key]["fields"][key].get("condition")
+
+    if condition_path:
+        current = settings
+        tokens = condition_path.split(".")
+
+        for token in tokens:
+            current = current.get(token, {})
+
+        if isinstance(current, bool):
+            is_visible &= current
+
+    return is_visible
 
 
-def save_settings(settings: Settings) -> None:
-    # TODO: Save settings to a file.
-    pass
-
-
-def render_settings(settings: Settings) -> Settings:
+def render_settings(settings: dict) -> dict:
     if imgui.begin_main_menu_bar():
         if imgui.begin_menu("File", True):
             clicked_quit, _ = imgui.menu_item("Quit", "Cmd+Q", False, True)
@@ -89,55 +107,57 @@ def render_settings(settings: Settings) -> Settings:
     imgui.begin("Settings", flags=imgui.WINDOW_ALWAYS_AUTO_RESIZE)
     tree_node_flags = imgui.TREE_NODE_DEFAULT_OPEN | imgui.TREE_NODE_FRAME_PADDING
 
-    if imgui.tree_node("Boundary", flags=tree_node_flags):
-        imgui.separator()
-        _, settings.bound_top_left.x = imgui.slider_float("X0", settings.bound_top_left.x, 0.0, SCREEN_WIDTH / 2)
-        _, settings.bound_top_left.y = imgui.slider_float("Y0", settings.bound_top_left.y, 0.0, SCREEN_HEIGHT / 2)
-        _, settings.bound_bottom_right.x = imgui.slider_float(
-            "X1", settings.bound_bottom_right.x, SCREEN_WIDTH / 2, SCREEN_WIDTH
-        )
-        _, settings.bound_bottom_right.y = imgui.slider_float(
-            "Y1", settings.bound_bottom_right.y, SCREEN_HEIGHT / 2, SCREEN_HEIGHT
-        )
-        imgui.tree_pop()
-        imgui.spacing()
+    for section_key, node in spec.items():
+        if imgui.tree_node(node["title"], flags=tree_node_flags):
+            imgui.separator()
 
-    if imgui.tree_node("Boids", flags=tree_node_flags):
-        imgui.separator()
-        _, settings.count = imgui.slider_int("Count", settings.count, 1, 1000)
-        _, settings.speed = imgui.slider_float("Speed", settings.speed, 0.1, 10.0)
-        _, settings.max_speed = imgui.slider_float("Max speed", settings.max_speed, 0, 100)
-        _, settings.cohesion = imgui.slider_int("Cohesion, %", settings.cohesion, 1, 100)
-        _, settings.alignment = imgui.slider_int("Alignment, %", settings.alignment, 1, 100)
-        _, settings.separation_distance = imgui.slider_int("Separation distance", settings.separation_distance, 1, 100)
-        _, settings.separation_strength = imgui.slider_int("Separation strength", settings.separation_strength, 1, 100)
-        _, settings.turn_factor = imgui.slider_float("Turn factor", settings.turn_factor, 1, 75)
-        _, settings.locality_radius = imgui.slider_float("Locality radius", settings.locality_radius, 5, 1000)
-        imgui.tree_pop()
-        imgui.spacing()
+            for key, value in node["fields"].items():
+                is_visible = is_setting_visible(settings, section_key, key)
 
-    if imgui.tree_node("Environment", flags=tree_node_flags):
-        imgui.separator()
-        imgui.text("Wind")
-        _, settings.wind_direction.x = imgui.slider_float("X", settings.wind_direction.x, -1.0, 1.0)
-        _, settings.wind_direction.y = imgui.slider_float("Y", settings.wind_direction.y, -1.0, 1.0)
-        _, settings.wind_strength = imgui.slider_float("Strength", settings.wind_strength, 0.0, 100.0)
-        _, settings.goal = imgui.checkbox("Random goal", settings.goal)
+                if not is_visible:
+                    continue
 
-        if settings.goal:
-            _, settings.goal_duration_sec = imgui.slider_int("Goal duration, s.", settings.goal_duration_sec, 1, 30)
-            _, settings.goal_strength = imgui.slider_int("Goal strength, %", settings.goal_strength, 1, 100)
+                match value["type"]:
+                    case "Vector2":
+                        for axis in ["x", "y"]:
+                            _, settings[section_key]["fields"][key][axis]["value"] = imgui.slider_float(
+                                value[axis]["title"],
+                                settings[section_key]["fields"][key][axis]["value"],
+                                settings[section_key]["fields"][key][axis]["min"],
+                                settings[section_key]["fields"][key][axis]["max"],
+                            )
+                    case "int":
+                        _, settings[section_key]["fields"][key]["value"] = imgui.slider_int(
+                            value["title"],
+                            settings[section_key]["fields"][key]["value"],
+                            settings[section_key]["fields"][key]["min"],
+                            settings[section_key]["fields"][key]["max"],
+                        )
+                    case "float":
+                        _, settings[section_key]["fields"][key]["value"] = imgui.slider_float(
+                            value["title"],
+                            settings[section_key]["fields"][key]["value"],
+                            settings[section_key]["fields"][key]["min"],
+                            settings[section_key]["fields"][key]["max"],
+                        )
+                    case "bool":
+                        _, settings[section_key]["fields"][key]["value"] = imgui.checkbox(
+                            value["title"],
+                            settings[section_key]["fields"][key]["value"],
+                        )
+                    case _:
+                        raise ValueError("Unknown setting type.")
 
-        imgui.tree_pop()
-        imgui.spacing()
+            imgui.tree_pop()
+            imgui.spacing()
 
     clicked_reset = imgui.button("Reset Settings")
 
     if clicked_reset:
-        settings = Settings()
+        settings = build_settings()
 
-    if settings.is_dirty:
-        save_settings(settings)
+    # if settings.is_dirty:
+    #     save_settings(settings)
 
     imgui.end()
 
