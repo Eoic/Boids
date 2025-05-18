@@ -7,7 +7,7 @@ from typing import Literal
 import imgui
 
 from boids.constants import TOP_MENU_HEIGHT
-from boids.settings.spec import spec
+from boids.settings.schema import spec
 
 
 class Settings:
