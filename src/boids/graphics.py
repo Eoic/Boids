@@ -28,6 +28,11 @@ def set_orthographic_projection(screen_size: tuple[int, int]):
     gl.glLoadIdentity()
 
 
+def clear_screen(color: tuple[float, float, float, float]):
+    gl.glClearColor(*color)
+    gl.glClear(gl.GL_COLOR_BUFFER_BIT)
+
+
 def draw_filled_rect(
     x: float,
     y: float,

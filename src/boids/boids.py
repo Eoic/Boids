@@ -14,6 +14,7 @@ from boids.constants import (
     BOUND_COLOR,
     FPS,
     GOAL_COLOR,
+    SCREEN_COLOR,
     SCREEN_HEIGHT,
     SCREEN_SIZE,
     SCREEN_WIDTH,
@@ -118,8 +119,7 @@ def render(renderer: PygameRenderer, clock: pygame.time.Clock):
         update_goal(state, settings)
         update_boids(state, settings, delta_time)
 
-        gl.glClearColor(0.08, 0.1, 0.12, 1)
-        gl.glClear(gl.GL_COLOR_BUFFER_BIT)
+        graphics.clear_screen(SCREEN_COLOR)
         graphics.set_orthographic_projection(SCREEN_SIZE)
 
         for boid in state.boids:
