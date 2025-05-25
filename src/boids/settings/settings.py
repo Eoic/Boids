@@ -2,17 +2,18 @@ import json
 import os
 import sys
 from copy import deepcopy
+from json import JSONDecodeError
 from typing import Literal
 
 import imgui
 
 from boids.constants import TOP_MENU_HEIGHT
-from boids.settings.schema import spec
+from boids.settings.schema import schema
 
 
 class Settings:
     def __init__(self):
-        self._settings: dict = deepcopy(spec)
+        self._settings: dict = deepcopy(schema)
 
     def get(self, section: str, field: str) -> int | float | bool | tuple[float, float]:
         field_data: dict | None = self._settings.get(section, {}).get("fields", {}).get(field, None)
@@ -38,15 +39,6 @@ class Settings:
             raise KeyError(f"Setting '{section}.{field}' does not exist.")
 
         return field_data
-
-    def get_slider(self, value_type: Literal["int", "float"]):
-        match value_type:
-            case "int":
-                return imgui.slider_int
-            case "float":
-                return imgui.slider_float
-            case _:
-                raise ValueError("Unknown type.")
 
     def set(self, section: str, field: str, value: float | int | bool | tuple[float, float]):
         if isinstance(value, (tuple, list)):
@@ -77,6 +69,10 @@ class Settings:
         for section, section_data in self._settings.items():
             dict_settings[section] = {}
 
+            if section.startswith("_"):
+                dict_settings[section] = section_data
+                continue
+
             for field, field_data in section_data["fields"].items():
                 match field_data["type"]:
                     case "Vector2":
@@ -92,12 +88,27 @@ class Settings:
             for field, field_data in section_data.items():
                 self.set(section, field, field_data)
 
+    @staticmethod
+    def get_slider(value_type: Literal["int", "float"]):
+        match value_type:
+            case "int":
+                return imgui.slider_int
+            case "float":
+                return imgui.slider_float
+            case _:
+                raise ValueError("Unknown type.")
 
 def load_settings() -> Settings:
     if os.path.exists("settings.json"):
         with open("settings.json") as file:
             settings = Settings()
-            settings_dict = json.load(file)
+
+            try:
+                settings_dict = json.load(file)
+            except JSONDecodeError:
+                print("Could not load settings from a file - file is invalid.")
+                settings_dict = {}
+
             settings.load_dict(settings_dict)
             return settings
 
@@ -127,7 +138,10 @@ def render_settings(settings: Settings) -> Settings:
     tree_node_flags = imgui.TREE_NODE_DEFAULT_OPEN | imgui.TREE_NODE_FRAME_PADDING
     is_dirty = False
 
-    for section, section_data in spec.items():
+    for section, section_data in schema.items():
+        if section.startswith("_"):
+            continue
+
         if imgui.tree_node(section_data["title"], flags=tree_node_flags):
             imgui.separator()
 
@@ -156,7 +170,7 @@ def render_settings(settings: Settings) -> Settings:
 
                         settings.set(section, field, (axes[0], axes[1]))
                     case "int" | "float":
-                        dirty, setting_value = settings.get_slider(value["type"])(
+                        dirty, setting_value = Settings.get_slider(value["type"])(
                             value["title"],
                             field_data["value"],
                             field_data["min"],

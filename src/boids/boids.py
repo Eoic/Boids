@@ -3,7 +3,7 @@ import secrets
 from typing import cast
 
 import imgui
-import OpenGL.GL as gl
+import OpenGL.GL as GL
 import pygame
 from imgui.integrations.pygame import PygameRenderer
 from pygame import Vector2
@@ -125,8 +125,8 @@ def render(renderer: PygameRenderer, clock: pygame.time.Clock):
         for boid in state.boids:
             graphics.draw_circle(boid.position, 5, BOID_COLOR)
 
-        top_left = cast(tuple, settings.get("boundary", "top_left"))
-        bottom_right = cast(tuple, settings.get("boundary", "bottom_right"))
+        top_left = cast(tuple[float, float], settings.get("boundary", "top_left"))
+        bottom_right = cast(tuple[float, float], settings.get("boundary", "bottom_right"))
         graphics.draw_rect_outline(top_left, bottom_right, BOUND_COLOR, line_width=2.0)
 
         if state.goal_alive:
@@ -151,8 +151,8 @@ def main():
     pygame.display.set_mode(SCREEN_SIZE, pygame.DOUBLEBUF | pygame.OPENGL)
     imgui.create_context()
     renderer = PygameRenderer()
-    gl.glEnable(gl.GL_BLEND)
-    gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
+    GL.glEnable(GL.GL_BLEND)
+    GL.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA)
     io = imgui.get_io()
     io.display_size = SCREEN_SIZE
     clock = pygame.time.Clock()

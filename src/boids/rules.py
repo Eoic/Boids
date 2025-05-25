@@ -24,7 +24,7 @@ def cohesion(context: RuleContext):
     """
 
     center = Vector2(0, 0)
-    cohesion = cast(int, context.settings.get("boids", "cohesion"))
+    cohesion_strength = cast(int, context.settings.get("boids", "cohesion"))
 
     if not context.neighbors:
         return center
@@ -34,7 +34,7 @@ def cohesion(context: RuleContext):
 
     center /= len(context.neighbors)
 
-    return (center - context.boid.position) * (cohesion / 100)
+    return (center - context.boid.position) * (cohesion_strength / 100)
 
 
 def separation(context: RuleContext):
@@ -67,14 +67,14 @@ def alignment(context: RuleContext):
     if not context.neighbors:
         return center
 
-    alignment = cast(int, context.settings.get("boids", "alignment"))
+    alignment_strength = cast(int, context.settings.get("boids", "alignment"))
 
     for boid in context.neighbors:
         center += boid.velocity
 
     center /= len(context.neighbors)
 
-    return (center - context.boid.velocity) * (alignment / 100)
+    return (center - context.boid.velocity) * (alignment_strength / 100)
 
 
 def apply_wind(context: RuleContext):

@@ -1,6 +1,9 @@
 from boids.constants import SCREEN_HEIGHT, SCREEN_WIDTH
 
-spec = {
+schema = {
+    "_meta": {
+        "version": "1.0.0",
+    },
     "boundary": {
         "title": "Boundary",
         "fields": {
