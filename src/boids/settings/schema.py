@@ -2,11 +2,17 @@ from boids.constants import SCREEN_HEIGHT, SCREEN_WIDTH
 
 schema = {
     "_meta": {
-        "version": "1.0.0",
+        "version": "1.1.0",
     },
     "boundary": {
         "title": "Boundary",
         "fields": {
+            "enabled": {
+                "title": "Is enabled",
+                "type": "bool",
+                "default": False,
+                "value": False,
+            },
             "top_left": {
                 "type": "Vector2",
                 "x": {
@@ -25,6 +31,7 @@ schema = {
                     "default": 0.0,
                     "value": 0.0,
                 },
+                "condition": "boundary.fields.enabled.value",
             },
             "bottom_right": {
                 "type": "Vector2",
@@ -44,6 +51,7 @@ schema = {
                     "default": SCREEN_HEIGHT,
                     "value": SCREEN_HEIGHT,
                 },
+                "condition": "boundary.fields.enabled.value",
             },
         },
     },

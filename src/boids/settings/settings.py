@@ -85,6 +85,10 @@ class Settings:
 
     def load_dict(self, data: dict):
         for section, section_data in data.items():
+            if section.startswith("_"):
+                self._settings[section] = section_data
+                continue
+
             for field, field_data in section_data.items():
                 self.set(section, field, field_data)
 

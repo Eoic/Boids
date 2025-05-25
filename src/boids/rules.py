@@ -90,6 +90,12 @@ def apply_wind(context: RuleContext):
 
 def limit_position(context: RuleContext):
     velocity = Vector2(0, 0)
+
+    if not context.settings.get("boundary", "enabled"):
+        context.boid.position.x %= SCREEN_WIDTH
+        context.boid.position.y %= SCREEN_HEIGHT
+        return velocity
+
     top_left = cast(tuple, context.settings.get("boundary", "top_left"))
     bottom_right = cast(tuple, context.settings.get("boundary", "bottom_right"))
     turn_factor = cast(float, context.settings.get("boids", "turn_factor"))

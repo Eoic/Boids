@@ -125,9 +125,10 @@ def render(renderer: PygameRenderer, clock: pygame.time.Clock):
         for boid in state.boids:
             graphics.draw_circle(boid.position, 5, BOID_COLOR)
 
-        top_left = cast(tuple[float, float], settings.get("boundary", "top_left"))
-        bottom_right = cast(tuple[float, float], settings.get("boundary", "bottom_right"))
-        graphics.draw_rect_outline(top_left, bottom_right, BOUND_COLOR, line_width=2.0)
+        if settings.get("boundary", "enabled"):
+            top_left = cast(tuple[float, float], settings.get("boundary", "top_left"))
+            bottom_right = cast(tuple[float, float], settings.get("boundary", "bottom_right"))
+            graphics.draw_rect_outline(top_left, bottom_right, BOUND_COLOR, line_width=2.0)
 
         if state.goal_alive:
             graphics.draw_circle(state.goal_position, 10, GOAL_COLOR)
