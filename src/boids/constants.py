@@ -10,5 +10,6 @@ TOP_MENU_HEIGHT = 19
 BOUND_COLOR = (0.86, 0.08, 0.24, 0.80)
 
 # Entities
+BOID_SIZE = 5
 BOID_COLOR = (0.86, 0.08, 0.24, 1.0)
 GOAL_COLOR = (0.2, 0.8, 0.1, 1.0)

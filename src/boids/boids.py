@@ -12,6 +12,7 @@ from pygame import Vector2
 from boids import graphics
 from boids.constants import (
     BOID_COLOR,
+    BOID_SIZE,
     BOUND_COLOR,
     FPS,
     GOAL_COLOR,
@@ -149,7 +150,7 @@ def render(renderer: PygameRenderer, clock: pygame.time.Clock):
         graphics.set_orthographic_projection(SCREEN_SIZE)
 
         for boid in state.boids:
-            graphics.draw_circle(boid.position, 5, BOID_COLOR)
+            graphics.draw_triangle(boid.position, BOID_SIZE, BOID_COLOR, math.atan2(boid.velocity.y, boid.velocity.x))
 
         if settings.get("boundary", "enabled"):
             top_left = cast(tuple[float, float], settings.get("boundary", "top_left"))

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+
 from pygame.math import Vector2
 
 from boids.kdtree import PointLike
