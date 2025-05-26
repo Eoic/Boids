@@ -79,8 +79,8 @@ schema = {
                 "type": "float",
                 "min": 0,
                 "max": 100,
-                "default": 70.0,
-                "value": 70.0,
+                "default": 40.0,
+                "value": 40.0,
             },
             "cohesion": {
                 "title": "Cohesion, %",

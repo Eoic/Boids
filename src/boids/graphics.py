@@ -20,6 +20,24 @@ def draw_circle(center: Vector2, radius: float, color: tuple[float, float, float
     gl.glEnd()
 
 
+def draw_triangle(
+    center: Vector2,
+    size: float,
+    color: tuple[float, float, float, float],
+    direction: float = 0.0,
+):
+    gl.glColor4f(*color)
+    gl.glBegin(gl.GL_TRIANGLES)
+
+    for i in range(3):
+        angle = direction + 2 * math.pi * i / 3
+        x = center.x + math.cos(angle) * size
+        y = center.y + math.sin(angle) * size
+        gl.glVertex2f(x, y)
+
+    gl.glEnd()
+
+
 def set_orthographic_projection(screen_size: tuple[int, int]):
     gl.glMatrixMode(gl.GL_PROJECTION)
     gl.glLoadIdentity()

@@ -1,16 +1,18 @@
+import math
 import os
 import secrets
 from typing import cast
 
 import imgui
-import OpenGL.GL as GL
 import pygame
 from imgui.integrations.pygame import PygameRenderer
+from OpenGL import GL
 from pygame import Vector2
 
 from boids import graphics
 from boids.constants import (
     BOID_COLOR,
+    BOID_SIZE,
     BOUND_COLOR,
     FPS,
     GOAL_COLOR,
@@ -20,18 +22,26 @@ from boids.constants import (
     SCREEN_WIDTH,
 )
 from boids.entities import Boid, State
-from boids.kdtree import KDTree
 from boids.rules import RuleContext, evaluate_rules
 from boids.settings.settings import Settings, load_settings, render_settings
+from boids.spatialgrid import SpatialGrid
 
 os.environ["SDL_VIDEO_X11_FORCE_EGL"] = "1"
 
 
-def create_boids(count: int) -> KDTree[Boid]:
-    boids = KDTree[Boid](2)
+def _secure_uniform(a: float, b: float) -> float:
+    scale = 10**8
+    return a + (b - a) * (secrets.randbelow(scale) / scale)
+
+
+def create_boids(count: int) -> SpatialGrid[Boid]:
+    boids = SpatialGrid[Boid](2)
 
     for _ in range(count):
-        boid = Boid()
+        angle = _secure_uniform(0, 2 * math.pi)
+        speed = _secure_uniform(1.0, 3.0)
+        velocity = Vector2(speed, 0).rotate_rad(angle)
+        boid = Boid(velocity=velocity)
         boid.position.update(secrets.randbelow(SCREEN_WIDTH + 1), secrets.randbelow(SCREEN_HEIGHT + 1))
         boids.insert(boid)
 
@@ -63,6 +73,10 @@ def limit_velocity(boid: Boid, settings: Settings):
     return boid.velocity
 
 
+def add_perturbation(_boid: Boid, _settings: Settings):
+    return Vector2(_secure_uniform(-0.2, 0.2), _secure_uniform(-0.2, 0.2))
+
+
 def update_boids(state: State, settings: Settings, delta_time: float):
     speed = cast(float, settings.get("boids", "speed"))
     locality = cast(float, settings.get("boids", "locality_radius"))
@@ -71,8 +85,16 @@ def update_boids(state: State, settings: Settings, delta_time: float):
         neighbors = state.boids.search_radius(boid, locality)
         context = RuleContext(boid=boid, state=state, settings=settings, neighbors=neighbors)
         boid.velocity += evaluate_rules(context)
+        boid.velocity += add_perturbation(boid, settings)
         boid.velocity = limit_velocity(boid, settings)
         boid.position += boid.velocity * speed * delta_time
+
+    new_grid = SpatialGrid[Boid](2)
+
+    for boid in state.boids:
+        new_grid.insert(boid)
+
+    state.boids = new_grid
 
 
 def update_boid_count(state: State, settings: Settings):
@@ -81,15 +103,20 @@ def update_boid_count(state: State, settings: Settings):
     if len(state.boids) == count:
         return
 
-    tree = KDTree[Boid](2)
+    tree = SpatialGrid[Boid](2)
 
     for _ in range(count):
+        angle = _secure_uniform(0, 2 * math.pi)
+        speed = _secure_uniform(1.0, 3.0)
+        velocity = Vector2(speed, 0).rotate_rad(angle)
+
         tree.insert(
             Boid(
+                velocity=velocity,
                 position=Vector2(
                     x=secrets.randbelow(SCREEN_WIDTH + 1),
-                    y=secrets.randbelow(SCREEN_WIDTH + 1),
-                )
+                    y=secrets.randbelow(SCREEN_HEIGHT + 1),
+                ),
             )
         )
 
@@ -123,7 +150,7 @@ def render(renderer: PygameRenderer, clock: pygame.time.Clock):
         graphics.set_orthographic_projection(SCREEN_SIZE)
 
         for boid in state.boids:
-            graphics.draw_circle(boid.position, 5, BOID_COLOR)
+            graphics.draw_triangle(boid.position, BOID_SIZE, BOID_COLOR, math.atan2(boid.velocity.y, boid.velocity.x))
 
         if settings.get("boundary", "enabled"):
             top_left = cast(tuple[float, float], settings.get("boundary", "top_left"))
