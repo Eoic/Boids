@@ -76,10 +76,15 @@ class SpatialGrid(Generic[T]):
         return sum((a[d] - b[d]) ** 2 for d in range(self.dimensions))
 
     def _iter_cells(self, min_coords, max_coords):
-        for x in range(min_coords[0], max_coords[0] + 1):
-            for y in range(min_coords[1], max_coords[1] + 1):
-                yield (x, y)
+        def recurse(dim, current_coords):
+            if dim == self.dimensions:
+                yield tuple(current_coords)
+                return
+            for coord in range(min_coords[dim], max_coords[dim] + 1):
+                current_coords[dim] = coord
+                yield from recurse(dim + 1, current_coords)
 
+        yield from recurse(0, [0] * self.dimensions)
     def __iter__(self) -> Iterator[T]:
         return iter(self.items)
 
