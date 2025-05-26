@@ -3,9 +3,9 @@ import secrets
 from typing import cast
 
 import imgui
-import OpenGL.GL as GL
 import pygame
 from imgui.integrations.pygame import PygameRenderer
+from OpenGL import GL
 from pygame import Vector2
 
 from boids import graphics
@@ -20,15 +20,15 @@ from boids.constants import (
     SCREEN_WIDTH,
 )
 from boids.entities import Boid, State
-from boids.kdtree import KDTree
+from boids.spatialgrid import SpatialGrid
 from boids.rules import RuleContext, evaluate_rules
 from boids.settings.settings import Settings, load_settings, render_settings
 
 os.environ["SDL_VIDEO_X11_FORCE_EGL"] = "1"
 
 
-def create_boids(count: int) -> KDTree[Boid]:
-    boids = KDTree[Boid](2)
+def create_boids(count: int) -> SpatialGrid[Boid]:
+    boids = SpatialGrid[Boid](2)
 
     for _ in range(count):
         boid = Boid()
@@ -81,14 +81,14 @@ def update_boid_count(state: State, settings: Settings):
     if len(state.boids) == count:
         return
 
-    tree = KDTree[Boid](2)
+    tree = SpatialGrid[Boid](2)
 
     for _ in range(count):
         tree.insert(
             Boid(
                 position=Vector2(
                     x=secrets.randbelow(SCREEN_WIDTH + 1),
-                    y=secrets.randbelow(SCREEN_WIDTH + 1),
+                    y=secrets.randbelow(SCREEN_HEIGHT + 1),
                 )
             )
         )
