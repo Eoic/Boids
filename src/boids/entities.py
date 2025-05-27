@@ -13,7 +13,6 @@ from boids.spatialgrid import SpatialGrid
 class Boid(PointLike):
     velocity: Vector2 = field(default_factory=lambda: Vector2(0, 0))
     position: Vector2 = field(default_factory=lambda: Vector2(0, 0))
-    speed: float = field(default=0.0, init=False, repr=False)
     color: tuple[float, float, float, float] = field(default=BOID_COLOR, init=False, repr=False)
 
     def __getitem__(self, index: int) -> float:

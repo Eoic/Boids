@@ -14,11 +14,8 @@ from boids.constants import (
     BOID_COLOR,
     BOID_DIMENSIONS,
     BOID_MAX_INIT_SPEED,
-    BOID_MAX_SPEED_COLOR_HUE,
     BOID_MIN_INIT_SPEED,
-    BOID_MIN_SPEED_COLOR_HUE,
     BOID_SIZE,
-    BOID_SPEED_HUE_RANGE,
     BOUND_COLOR,
     BOUND_WIDTH,
     FPS,
@@ -84,12 +81,9 @@ def update_goal(state: State, settings: Settings):
 
 def limit_velocity(boid: Boid, settings: Settings):
     max_speed = cast(float, settings.get("boids", "max_speed"))
-    boid.speed = boid.velocity.length()
 
-    if boid.speed > max_speed:
-        max_velocity = boid.velocity.normalize() * max_speed
-        boid.speed = max_velocity.length()
-        return max_velocity
+    if boid.velocity.length() > max_speed:
+        return boid.velocity.normalize() * max_speed
 
     return boid.velocity
 
