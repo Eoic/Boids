@@ -89,7 +89,7 @@ def hsl_to_rgb(hue: float, saturation: float, lightness: float) -> tuple[float, 
 
     Args:
         hue (float): The hue component of the color, in the range [0.0, 1.0].
-        sarutation (float): The saturation component of the color, in the range [0.0, 1.0].
+        saturation (float): The saturation component of the color, in the range [0.0, 1.0].
         lightness (float): The lightness component of the color, in the range [0.0, 1.0].
 
     Returns:
