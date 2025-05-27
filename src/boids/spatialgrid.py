@@ -58,6 +58,7 @@ class SpatialGrid(Generic[T]):
             for i in self.grid[coords].items:
                 if i == item:
                     return i
+
         return None
 
     def search_radius(self, query: T, radius: float) -> list[T]:
@@ -85,6 +86,7 @@ class SpatialGrid(Generic[T]):
                 yield from recurse(dim + 1, current_coords)
 
         yield from recurse(0, [0] * self.dimensions)
+
     def __iter__(self) -> Iterator[T]:
         return iter(self.items)
 

@@ -12,10 +12,17 @@ from pygame import Vector2
 from boids import graphics
 from boids.constants import (
     BOID_COLOR,
+    BOID_DIMENSIONS,
+    BOID_MAX_INIT_SPEED,
+    BOID_MIN_INIT_SPEED,
     BOID_SIZE,
     BOUND_COLOR,
+    BOUND_WIDTH,
     FPS,
     GOAL_COLOR,
+    GOAL_SIZE,
+    PERTURBATION_MAX,
+    PERTURBATION_MIN,
     SCREEN_COLOR,
     SCREEN_HEIGHT,
     SCREEN_SIZE,
@@ -35,14 +42,21 @@ def _secure_uniform(a: float, b: float) -> float:
 
 
 def create_boids(count: int) -> SpatialGrid[Boid]:
-    boids = SpatialGrid[Boid](2)
+    boids = SpatialGrid[Boid](BOID_DIMENSIONS)
 
     for _ in range(count):
         angle = _secure_uniform(0, 2 * math.pi)
-        speed = _secure_uniform(1.0, 3.0)
+        speed = _secure_uniform(BOID_MIN_INIT_SPEED, BOID_MAX_INIT_SPEED)
         velocity = Vector2(speed, 0).rotate_rad(angle)
-        boid = Boid(velocity=velocity)
-        boid.position.update(secrets.randbelow(SCREEN_WIDTH + 1), secrets.randbelow(SCREEN_HEIGHT + 1))
+
+        boid = Boid(
+            velocity=velocity,
+            position=Vector2(
+                x=secrets.randbelow(SCREEN_WIDTH + 1),
+                y=secrets.randbelow(SCREEN_HEIGHT + 1),
+            ),
+        )
+
         boids.insert(boid)
 
     return boids
@@ -74,7 +88,10 @@ def limit_velocity(boid: Boid, settings: Settings):
 
 
 def add_perturbation(_boid: Boid, _settings: Settings):
-    return Vector2(_secure_uniform(-0.2, 0.2), _secure_uniform(-0.2, 0.2))
+    return Vector2(
+        _secure_uniform(PERTURBATION_MIN, PERTURBATION_MAX),
+        _secure_uniform(PERTURBATION_MIN, PERTURBATION_MAX),
+    )
 
 
 def update_boids(state: State, settings: Settings, delta_time: float):
@@ -89,7 +106,7 @@ def update_boids(state: State, settings: Settings, delta_time: float):
         boid.velocity = limit_velocity(boid, settings)
         boid.position += boid.velocity * speed * delta_time
 
-    new_grid = SpatialGrid[Boid](2)
+    new_grid = SpatialGrid[Boid](BOID_DIMENSIONS)
 
     for boid in state.boids:
         new_grid.insert(boid)
@@ -103,24 +120,7 @@ def update_boid_count(state: State, settings: Settings):
     if len(state.boids) == count:
         return
 
-    tree = SpatialGrid[Boid](2)
-
-    for _ in range(count):
-        angle = _secure_uniform(0, 2 * math.pi)
-        speed = _secure_uniform(1.0, 3.0)
-        velocity = Vector2(speed, 0).rotate_rad(angle)
-
-        tree.insert(
-            Boid(
-                velocity=velocity,
-                position=Vector2(
-                    x=secrets.randbelow(SCREEN_WIDTH + 1),
-                    y=secrets.randbelow(SCREEN_HEIGHT + 1),
-                ),
-            )
-        )
-
-    state.boids = tree
+    state.boids = create_boids(count)
 
 
 def process_events(renderer: PygameRenderer, state: State):
@@ -155,10 +155,10 @@ def render(renderer: PygameRenderer, clock: pygame.time.Clock):
         if settings.get("boundary", "enabled"):
             top_left = cast(tuple[float, float], settings.get("boundary", "top_left"))
             bottom_right = cast(tuple[float, float], settings.get("boundary", "bottom_right"))
-            graphics.draw_rect_outline(top_left, bottom_right, BOUND_COLOR, line_width=2.0)
+            graphics.draw_rect_outline(top_left, bottom_right, BOUND_COLOR, line_width=BOUND_WIDTH)
 
         if state.goal_alive:
-            graphics.draw_circle(state.goal_position, 10, GOAL_COLOR)
+            graphics.draw_circle(state.goal_position, GOAL_SIZE, GOAL_COLOR)
 
         imgui.render()
         renderer.render(imgui.get_draw_data())
@@ -168,8 +168,7 @@ def render(renderer: PygameRenderer, clock: pygame.time.Clock):
 
 def setup_state(settings: Settings) -> State:
     count = cast(int, settings.get("boids", "count"))
-    boids = create_boids(count)
-    state = State(boids=boids)
+    state = State(boids=create_boids(count))
     return state
 
 
