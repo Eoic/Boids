@@ -2,7 +2,7 @@ from boids.constants import SCREEN_HEIGHT, SCREEN_WIDTH
 
 schema = {
     "_meta": {
-        "version": "1.1.0",
+        "version": "1.1.3",
     },
     "boundary": {
         "title": "Boundary",
@@ -77,7 +77,7 @@ schema = {
             "max_speed": {
                 "title": "Max speed",
                 "type": "float",
-                "min": 0,
+                "min": 0.1,
                 "max": 100,
                 "default": 40.0,
                 "value": 40.0,
@@ -130,6 +130,12 @@ schema = {
                 "default": 75.0,
                 "value": 75.0,
             },
+            "colorize_velocity": {
+                "title": "Colorize velocity",
+                "type": "bool",
+                "default": False,
+                "value": False,
+            },
         },
     },
     "environment": {
@@ -155,7 +161,7 @@ schema = {
                 },
             },
             "wind_strength": {
-                "title": "Wind Strength",
+                "title": "Wind strength",
                 "type": "float",
                 "min": 0.0,
                 "max": 100.0,
