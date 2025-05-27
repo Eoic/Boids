@@ -102,6 +102,7 @@ class Settings:
             case _:
                 raise ValueError("Unknown type.")
 
+
 def load_settings() -> Settings:
     if os.path.exists("settings.json"):
         with open("settings.json") as file:
@@ -111,6 +112,10 @@ def load_settings() -> Settings:
                 settings_dict = json.load(file)
             except JSONDecodeError:
                 print("Could not load settings from a file - file is invalid.")
+                settings_dict = {}
+
+            if settings_dict.get("_meta", {}).get("version") != schema["_meta"]["version"]:
+                print("Settings version mismatch. Resetting to default settings.")
                 settings_dict = {}
 
             settings.load_dict(settings_dict)

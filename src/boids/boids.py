@@ -14,8 +14,11 @@ from boids.constants import (
     BOID_COLOR,
     BOID_DIMENSIONS,
     BOID_MAX_INIT_SPEED,
+    BOID_MAX_SPEED_COLOR_HUE,
     BOID_MIN_INIT_SPEED,
+    BOID_MIN_SPEED_COLOR_HUE,
     BOID_SIZE,
+    BOID_SPEED_HUE_RANGE,
     BOUND_COLOR,
     BOUND_WIDTH,
     FPS,
@@ -32,6 +35,7 @@ from boids.entities import Boid, State
 from boids.rules import RuleContext, evaluate_rules
 from boids.settings.settings import Settings, load_settings, render_settings
 from boids.spatialgrid import SpatialGrid
+from boids.utils import clamp
 
 os.environ["SDL_VIDEO_X11_FORCE_EGL"] = "1"
 
@@ -80,11 +84,26 @@ def update_goal(state: State, settings: Settings):
 
 def limit_velocity(boid: Boid, settings: Settings):
     max_speed = cast(float, settings.get("boids", "max_speed"))
+    boid.speed = boid.velocity.length()
 
-    if boid.velocity.length() > max_speed:
-        return boid.velocity.normalize() * max_speed
+    if boid.speed > max_speed:
+        max_velocity = boid.velocity.normalize() * max_speed
+        boid.speed = max_velocity.length()
+        return max_velocity
 
     return boid.velocity
+
+
+def colorize(boid: Boid, settings: Settings):
+    is_enabled = settings.get("boids", "colorize_velocity")
+
+    if not is_enabled:
+        return BOID_COLOR
+
+    radians = math.atan2(boid.velocity.y, boid.velocity.x)
+    hue = (math.degrees(radians) + (0 if radians > 0 else 360)) / 360
+
+    return graphics.hsl_to_rgb(hue, 0.8, 0.5)
 
 
 def add_perturbation(_boid: Boid, _settings: Settings):
@@ -105,6 +124,7 @@ def update_boids(state: State, settings: Settings, delta_time: float):
         boid.velocity += add_perturbation(boid, settings)
         boid.velocity = limit_velocity(boid, settings)
         boid.position += boid.velocity * speed * delta_time
+        boid.color = colorize(boid, settings)
 
     new_grid = SpatialGrid[Boid](BOID_DIMENSIONS)
 
@@ -150,7 +170,7 @@ def render(renderer: PygameRenderer, clock: pygame.time.Clock):
         graphics.set_orthographic_projection(SCREEN_SIZE)
 
         for boid in state.boids:
-            graphics.draw_triangle(boid.position, BOID_SIZE, BOID_COLOR, math.atan2(boid.velocity.y, boid.velocity.x))
+            graphics.draw_triangle(boid.position, BOID_SIZE, boid.color, math.atan2(boid.velocity.y, boid.velocity.x))
 
         if settings.get("boundary", "enabled"):
             top_left = cast(tuple[float, float], settings.get("boundary", "top_left"))
