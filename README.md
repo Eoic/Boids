@@ -8,7 +8,7 @@ A Python implementation of the boids ("bird-oid objects") flocking algorithm, si
 * Uses [Pygame](https://www.pygame.org/news) for visualization and [pyimgui](https://github.com/pyimgui/pyimgui) for GUI.
 
 ## Preview
-<img src="public/preview.gif" width="auto" height="700%" style="object-fit: contain; max-height: 700px;" />
+<img src="public/preview_color.gif" width="auto" height="700%" style="object-fit: contain; max-height: 700px;" />
 
 ## Prerequisites
 
