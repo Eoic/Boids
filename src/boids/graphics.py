@@ -81,3 +81,46 @@ def draw_rect_outline(
     gl.glVertex2f(*bottom_right)
     gl.glVertex2f(top_left[0], bottom_right[1])
     gl.glEnd()
+
+
+def hsl_to_rgb(hue: float, saturation: float, lightness: float) -> tuple[float, float, float, float]:
+    """
+    Converts a color from HSL (Hue, Saturation, Lightness) color space to RGBA (Red, Green, Blue, Alpha).
+
+    Args:
+        hue (float): The hue component of the color, in the range [0.0, 1.0].
+        saturation (float): The saturation component of the color, in the range [0.0, 1.0].
+        lightness (float): The lightness component of the color, in the range [0.0, 1.0].
+
+    Returns:
+        (tuple[float, float, float, float]): A tuple representing the RGBA components, each in the range [0.0, 1.0].
+    """
+
+    def hue_to_rgb(p, q, t):
+        if t < 0:
+            t += 1
+
+        if t > 1:
+            t -= 1
+
+        if t < 1 / 6:
+            return p + (q - p) * 6 * t
+
+        if t < 1 / 2:
+            return q
+
+        if t < 2 / 3:
+            return p + (q - p) * (2 / 3 - t) * 6
+
+        return p
+
+    if saturation == 0:
+        r = g = b = lightness
+    else:
+        q = lightness * (1 + saturation) if lightness < 0.5 else lightness + saturation - lightness * saturation
+        p = 2 * lightness - q
+        r = hue_to_rgb(p, q, hue + 1 / 3)
+        g = hue_to_rgb(p, q, hue)
+        b = hue_to_rgb(p, q, hue - 1 / 3)
+
+    return (r, g, b, 1.0)

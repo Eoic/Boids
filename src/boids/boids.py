@@ -32,6 +32,7 @@ from boids.entities import Boid, State
 from boids.rules import RuleContext, evaluate_rules
 from boids.settings.settings import Settings, load_settings, render_settings
 from boids.spatialgrid import SpatialGrid
+from boids.utils import clamp
 
 os.environ["SDL_VIDEO_X11_FORCE_EGL"] = "1"
 
@@ -87,6 +88,18 @@ def limit_velocity(boid: Boid, settings: Settings):
     return boid.velocity
 
 
+def colorize(boid: Boid, settings: Settings):
+    is_enabled = settings.get("boids", "colorize_velocity")
+
+    if not is_enabled:
+        return BOID_COLOR
+
+    radians = math.atan2(boid.velocity.y, boid.velocity.x)
+    hue = (math.degrees(radians) + (0 if radians > 0 else 360)) / 360
+
+    return graphics.hsl_to_rgb(hue, 0.8, 0.5)
+
+
 def add_perturbation(_boid: Boid, _settings: Settings):
     return Vector2(
         _secure_uniform(PERTURBATION_MIN, PERTURBATION_MAX),
@@ -105,6 +118,7 @@ def update_boids(state: State, settings: Settings, delta_time: float):
         boid.velocity += add_perturbation(boid, settings)
         boid.velocity = limit_velocity(boid, settings)
         boid.position += boid.velocity * speed * delta_time
+        boid.color = colorize(boid, settings)
 
     new_grid = SpatialGrid[Boid](BOID_DIMENSIONS)
 
@@ -150,7 +164,7 @@ def render(renderer: PygameRenderer, clock: pygame.time.Clock):
         graphics.set_orthographic_projection(SCREEN_SIZE)
 
         for boid in state.boids:
-            graphics.draw_triangle(boid.position, BOID_SIZE, BOID_COLOR, math.atan2(boid.velocity.y, boid.velocity.x))
+            graphics.draw_triangle(boid.position, BOID_SIZE, boid.color, math.atan2(boid.velocity.y, boid.velocity.x))
 
         if settings.get("boundary", "enabled"):
             top_left = cast(tuple[float, float], settings.get("boundary", "top_left"))
