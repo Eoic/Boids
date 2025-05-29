@@ -28,6 +28,7 @@ from boids.constants import (
     SCREEN_SIZE,
     SCREEN_WIDTH,
 )
+from boids.debug import render_debug_info
 from boids.entities import Boid, State
 from boids.rules import RuleContext, evaluate_rules
 from boids.settings.settings import Settings, load_settings, render_settings
@@ -162,6 +163,8 @@ def render(renderer: PygameRenderer, clock: pygame.time.Clock):
 
         graphics.clear_screen(SCREEN_COLOR)
         graphics.set_orthographic_projection(SCREEN_SIZE)
+
+        render_debug_info(state, settings)
 
         for boid in state.boids:
             graphics.draw_triangle(boid.position, BOID_SIZE, boid.color, math.atan2(boid.velocity.y, boid.velocity.x))

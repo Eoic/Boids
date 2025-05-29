@@ -6,6 +6,20 @@ from pygame import Vector2
 from boids.constants import TOP_MENU_HEIGHT
 
 
+def draw_line(
+    start: tuple[float, float],
+    end: tuple[float, float],
+    color: tuple[float, float, float, float],
+    line_width: float = 1.0,
+):
+    gl.glLineWidth(line_width)
+    gl.glColor4f(*color)
+    gl.glBegin(gl.GL_LINES)
+    gl.glVertex2f(start[0], start[1] + TOP_MENU_HEIGHT)
+    gl.glVertex2f(end[0], end[1] + TOP_MENU_HEIGHT)
+    gl.glEnd()
+
+
 def draw_circle(center: Vector2, radius: float, color: tuple[float, float, float, float], segments: int = 32):
     gl.glColor4f(*color)
     gl.glBegin(gl.GL_TRIANGLE_FAN)
