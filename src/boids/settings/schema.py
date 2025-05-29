@@ -2,7 +2,7 @@ from boids.constants import SCREEN_HEIGHT, SCREEN_WIDTH
 
 schema = {
     "_meta": {
-        "version": "1.1.3",
+        "version": "1.2.4",
     },
     "boundary": {
         "title": "Boundary",
@@ -196,6 +196,19 @@ schema = {
                 "default": 1,
                 "value": 1,
                 "condition": "goal.fields.enabled.value",
+            },
+        },
+    },
+    "performance": {
+        "title": "Performance",
+        "fields": {
+            "spatial_grid_cell_size": {
+                "title": "Spatial grid cell size",
+                "type": "int",
+                "min": 20,
+                "max": 100,
+                "default": 50,
+                "value": 50,
             },
         },
     },

@@ -33,7 +33,6 @@ from boids.entities import Boid, State
 from boids.rules import RuleContext, evaluate_rules
 from boids.settings.settings import Settings, load_settings, render_settings
 from boids.spatialgrid import SpatialGrid
-from boids.utils import clamp
 
 os.environ["SDL_VIDEO_X11_FORCE_EGL"] = "1"
 
@@ -43,8 +42,9 @@ def _secure_uniform(a: float, b: float) -> float:
     return a + (b - a) * (secrets.randbelow(scale) / scale)
 
 
-def create_boids(count: int) -> SpatialGrid[Boid]:
-    boids = SpatialGrid[Boid](BOID_DIMENSIONS)
+def create_boids(count: int, settings: Settings) -> SpatialGrid[Boid]:
+    cell_size = cast(float, settings.get("performance", "spatial_grid_cell_size"))
+    boids = SpatialGrid[Boid](BOID_DIMENSIONS, cell_size=cell_size)
 
     for _ in range(count):
         angle = _secure_uniform(0, 2 * math.pi)
@@ -111,6 +111,7 @@ def add_perturbation(_boid: Boid, _settings: Settings):
 def update_boids(state: State, settings: Settings, delta_time: float):
     speed = cast(float, settings.get("boids", "speed"))
     locality = cast(float, settings.get("boids", "locality_radius"))
+    cell_size = cast(float, settings.get("performance", "spatial_grid_cell_size"))
 
     for boid in state.boids:
         neighbors = state.boids.search_radius(boid, locality)
@@ -121,7 +122,7 @@ def update_boids(state: State, settings: Settings, delta_time: float):
         boid.position += boid.velocity * speed * delta_time
         boid.color = colorize(boid, settings)
 
-    new_grid = SpatialGrid[Boid](BOID_DIMENSIONS)
+    new_grid = SpatialGrid[Boid](BOID_DIMENSIONS, cell_size=cell_size)
 
     for boid in state.boids:
         new_grid.insert(boid)
@@ -135,7 +136,7 @@ def update_boid_count(state: State, settings: Settings):
     if len(state.boids) == count:
         return
 
-    state.boids = create_boids(count)
+    state.boids = create_boids(count, settings)
 
 
 def process_events(renderer: PygameRenderer, state: State):
@@ -185,7 +186,7 @@ def render(renderer: PygameRenderer, clock: pygame.time.Clock):
 
 def setup_state(settings: Settings) -> State:
     count = cast(int, settings.get("boids", "count"))
-    state = State(boids=create_boids(count))
+    state = State(boids=create_boids(count, settings))
     return state
 
 

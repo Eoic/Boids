@@ -29,11 +29,11 @@ class SpatialGrid(Generic[T]):
         self.grid: dict[tuple[int, ...], GridCell[T]] = {}
         self.items: list[T] = []
 
-    def _cell_coords(self, item: T) -> tuple[int, ...]:
-        return tuple(int(item[d] // self.cell_size) for d in range(self.dimensions))
+    def _cell_coordinates(self, item: T) -> tuple[int, ...]:
+        return tuple(int(item[dimension] // self.cell_size) for dimension in range(self.dimensions))
 
     def insert(self, item: T):
-        coords = self._cell_coords(item)
+        coords = self._cell_coordinates(item)
 
         if coords not in self.grid:
             self.grid[coords] = GridCell()
@@ -42,7 +42,7 @@ class SpatialGrid(Generic[T]):
         self.items.append(item)
 
     def remove(self, item: T):
-        coords = self._cell_coords(item)
+        coords = self._cell_coordinates(item)
 
         if coords in self.grid:
             with contextlib.suppress(ValueError):
@@ -52,16 +52,17 @@ class SpatialGrid(Generic[T]):
             self.items.remove(item)
 
     def search(self, item: T) -> T | None:
-        coords = self._cell_coords(item)
+        coordinates = self._cell_coordinates(item)
 
-        if coords in self.grid:
-            for i in self.grid[coords].items:
+        if coordinates in self.grid:
+            for i in self.grid[coordinates].items:
                 if i == item:
                     return i
 
         return None
 
     def search_radius(self, query: T, radius: float) -> list[T]:
+        radius_squared = radius * radius
         min_coords = [int((query[d] - radius) // self.cell_size) for d in range(self.dimensions)]
         max_coords = [int((query[d] + radius) // self.cell_size) for d in range(self.dimensions)]
 
@@ -70,11 +71,11 @@ class SpatialGrid(Generic[T]):
             for cell in self._iter_cells(min_coords, max_coords)
             if cell in self.grid
             for item in self.grid[cell].items
-            if self._distance_sq(item, query) <= radius * radius
+            if self._distance_squared(item, query) <= radius_squared
         ]
 
-    def _distance_sq(self, a: T, b: T) -> float:
-        return sum((a[d] - b[d]) ** 2 for d in range(self.dimensions))
+    def _distance_squared(self, left: T, right: T) -> float:
+        return sum((left[d] - right[d]) ** 2 for d in range(self.dimensions))
 
     def _iter_cells(self, min_coords, max_coords):
         def recurse(dim, current_coords):
