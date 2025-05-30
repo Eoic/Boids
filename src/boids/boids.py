@@ -146,15 +146,16 @@ def process_events(renderer: PygameRenderer, state: State):
 
         renderer.process_event(event)
 
+    renderer.process_inputs()
 
-def render(renderer: PygameRenderer, clock: pygame.time.Clock):
+
+def render(renderer: PygameRenderer, batch_renderer: graphics.BatchRenderer, clock: pygame.time.Clock):
     delta_time = 0
     settings = load_settings()
     state = setup_state(settings)
 
     while state.running:
         process_events(renderer, state)
-        renderer.process_inputs()
         imgui.new_frame()
 
         settings = render_settings(settings)
@@ -168,7 +169,14 @@ def render(renderer: PygameRenderer, clock: pygame.time.Clock):
         render_debug_info(state, settings)
 
         for boid in state.boids:
-            graphics.draw_triangle(boid.position, BOID_SIZE, boid.color, math.atan2(boid.velocity.y, boid.velocity.x))
+            batch_renderer.push_triangle(
+                boid.position.xy,
+                BOID_SIZE,
+                boid.color,
+                math.atan2(boid.velocity.y, boid.velocity.x)
+            )
+
+        batch_renderer.render()
 
         if settings.get("boundary", "enabled"):
             top_left = cast(tuple[float, float], settings.get("boundary", "top_left"))
@@ -196,10 +204,11 @@ def main():
     pygame.display.set_mode(SCREEN_SIZE, pygame.DOUBLEBUF | pygame.OPENGL)
     imgui.create_context()
     renderer = PygameRenderer()
+    batch_renderer = graphics.BatchRenderer()
     GL.glEnable(GL.GL_BLEND)
     GL.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA)
     io = imgui.get_io()
     io.display_size = SCREEN_SIZE
     clock = pygame.time.Clock()
-    render(renderer, clock)
+    render(renderer, batch_renderer, clock)
     pygame.quit()

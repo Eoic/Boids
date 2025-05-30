@@ -4,7 +4,7 @@ from boids.graphics import draw_line
 from boids.settings.settings import Settings
 
 
-def render_debug_info(state: State, settings: Settings):
+def render_debug_info(state: State, _settings: Settings):
     line_width = 0.5
     line_color = (1.0, 1.0, 1.0, 0.05)
     x_lines = int(SCREEN_WIDTH // state.boids.cell_size)

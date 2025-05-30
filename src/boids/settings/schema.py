@@ -2,7 +2,7 @@ from boids.constants import SCREEN_HEIGHT, SCREEN_WIDTH
 
 schema = {
     "_meta": {
-        "version": "1.2.4",
+        "version": "1.2.5",
     },
     "boundary": {
         "title": "Boundary",
@@ -62,7 +62,7 @@ schema = {
                 "title": "Count",
                 "type": "int",
                 "min": 1,
-                "max": 1000,
+                "max": 2000,
                 "default": 500,
                 "value": 500,
             },

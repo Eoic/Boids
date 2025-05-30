@@ -1,5 +1,6 @@
 import math
 
+import numpy as np
 import OpenGL.GL as gl
 from pygame import Vector2
 
@@ -138,3 +139,86 @@ def hsl_to_rgb(hue: float, saturation: float, lightness: float) -> tuple[float, 
         b = hue_to_rgb(p, q, hue - 1 / 3)
 
     return (r, g, b, 1.0)
+
+
+class BatchRenderer:
+    def __init__(self):
+        self._vertices = []
+        self._colors = []
+
+        ids = gl.glGenBuffers(2)
+        self.vbo_positions_id = ids[0]
+        self.vbo_colors_id = ids[1]
+
+    def render(self):
+        self._update()
+        self._draw()
+        self._dispose()
+
+    def push_triangle(
+        self,
+        center: tuple[float, float],
+        size: float,
+        color: tuple[float, float, float, float],
+        direction: float
+    ):
+        center_x, center_y = center
+
+        for i in range(3):
+            angle = direction + 2 * math.pi * i / 3
+            x = center_x + math.cos(angle) * size
+            y = center_y + math.sin(angle) * size
+            self._push_vertex((x, y), color)
+
+    def cleanup(self):
+        if self.vbo_positions_id is not None and self.vbo_colors_id is not None:
+            gl.glDeleteBuffers(2, [self.vbo_positions_id, self.vbo_colors_id])
+            self.vbo_positions_id = None
+            self.vbo_colors_id = None
+
+    def _push_vertex(
+        self,
+        position: tuple[float, float],
+        color: tuple[float, float, float, float],
+    ):
+        self._vertices.extend(position)
+        self._colors.extend(color)
+
+    def _update(self):
+        if not self._vertices:
+            return
+
+        positions_np = np.array(self._vertices, dtype=np.float32)
+        gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self.vbo_positions_id)
+        gl.glBufferData(gl.GL_ARRAY_BUFFER, positions_np.nbytes, positions_np, gl.GL_DYNAMIC_DRAW)
+
+        colors_np = np.array(self._colors, dtype=np.float32)
+        gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self.vbo_colors_id)
+        gl.glBufferData(gl.GL_ARRAY_BUFFER, colors_np.nbytes, colors_np, gl.GL_DYNAMIC_DRAW)
+
+        gl.glBindBuffer(gl.GL_ARRAY_BUFFER, 0)
+
+    def _draw(self):
+        if not self._vertices:
+            return
+
+        gl.glEnableClientState(gl.GL_VERTEX_ARRAY)
+        gl.glEnableClientState(gl.GL_COLOR_ARRAY)
+
+        gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self.vbo_positions_id)
+        gl.glVertexPointer(2, gl.GL_FLOAT, 0, None)
+
+        gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self.vbo_colors_id)
+        gl.glColorPointer(4, gl.GL_FLOAT, 0, None)
+
+        vertices_count = len(self._vertices) // 2
+        gl.glDrawArrays(gl.GL_TRIANGLES, 0, vertices_count)
+
+        gl.glDisableClientState(gl.GL_COLOR_ARRAY)
+        gl.glDisableClientState(gl.GL_VERTEX_ARRAY)
+        gl.glBindBuffer(gl.GL_ARRAY_BUFFER, 0)
+
+    def _dispose(self):
+        self._vertices.clear()
+        self._colors.clear()
+
