@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "boids"
-version = "0.0.1"
+version = "1.0.0"
 authors = [
   { name="Karolis Strazdas", email="karolis.strazdas@protonmail.com" },
 ]
@@ -13,7 +13,8 @@ readme = "README.md"
 requires-python = ">=3.8"
 dependencies = [
   "pygame",
-  "imgui[pygame]"
+  "imgui[pygame]",
+  "numpy"
 ]
 classifiers = [
     "Programming Language :: Python :: 3",
