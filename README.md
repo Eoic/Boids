@@ -13,13 +13,9 @@ A Python implementation of the boids ("bird-oid objects") flocking algorithm, si
 ## Prerequisites
 
 * **Python:** 3.8+.
-* **pip:** The Python package installer.
 * Corresponding [python3-devel](https://pkgs.org/download/python3-devel) package for your distribution.
 
 ## Installation
-
-It's highly recommended to install and run this project within a virtual environment to avoid dependency conflicts.
-
 1.  **Clone the repository:**
     ```bash
     git clone https://github.com/Eoic/Boids
@@ -35,11 +31,10 @@ It's highly recommended to install and run this project within a virtual environ
 
 3.  **Install dependencies:**
 
-    * **For running the simulation (standard users):**
+    * **For running the simulation:**
         ```bash
         pip install .
         ```
-        *(This installs the package based on `pyproject.toml` without the development tools.)*
 
     * **For development (including testing, linting, etc.):**
         ```bash
